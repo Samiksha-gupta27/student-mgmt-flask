@@ -65,6 +65,13 @@ def editStudent(id):
 
         return redirect(url_for('index'))
 
+@app.route('/login/',methods=['GET','POST'])
+def user_login():
+    return render_template('user_login.html')
+
+@app.route('/register/',methods=['GET','POST'])
+def user_register():
+    return render_template('user_register.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
