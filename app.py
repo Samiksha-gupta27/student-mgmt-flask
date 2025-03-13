@@ -79,6 +79,9 @@ def user_register():
         place = request.form['place']
         country = request.form['country']
 
+        # TODO: add validation for existing users
+        # TODO: adding password encryption
+
         user = {
             email: email,
             password: password,
