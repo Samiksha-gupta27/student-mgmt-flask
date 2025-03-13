@@ -65,6 +65,36 @@ def editStudent(id):
 
         return redirect(url_for('index'))
 
+@app.route('/login/',methods=['GET','POST'])
+def user_login():
+    return render_template('user_login.html')
+
+@app.route('/register/',methods=['GET','POST'])
+def user_register():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        phone = request.form['phone']
+        name_of_college = request.form['college']
+        place = request.form['place']
+        country = request.form['country']
+
+        # TODO: add validation for existing users
+        # TODO: adding password encryption
+
+        user = {
+            email: email,
+            password: password,
+            phone: phone,
+            name_of_college: name_of_college,
+            place:place,
+            country: country
+        }
+
+        db.users.insert_one(user)
+        return redirect(url_for('user_login'))
+
+    return render_template('user_register.html')
 
 if __name__ == '__main__':
     app.run(debug=True)
