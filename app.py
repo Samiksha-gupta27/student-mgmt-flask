@@ -12,7 +12,7 @@ app = Flask(__name__)
 @app.route('/')
 def index():
     student_list = db.students.find({})
-    return render_template('pages/students.html', student_list=student_list)
+    return render_template('index.html', student_list=student_list)
 
 
 @app.route('/add-student/', methods=['POST'])
@@ -45,7 +45,7 @@ def editStudent(id):
     if request.method == 'GET':
         student = db.students.find_one({'_id': ObjectId(id)})
         students = db.students.find({})
-        return render_template('pages/students.html', student = student, student_list = students)
+        return render_template('index.html', student = student, student_list = students)
     else:
         name = request.form['name']
         regNo = request.form['registerNumber']
