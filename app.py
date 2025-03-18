@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect,jsonify, Response
+from flask import Flask, render_template, request, url_for, redirect, jsonify, Response
 from pymongo import MongoClient
 from config import DB_URL  # Import DB_URL from config.py
 from bson import ObjectId
@@ -15,11 +15,10 @@ app = Flask(__name__)
 def index():
     student_list = db.students.find({}).sort("regNo", 1)
 
-    students=[]
+    students = []
     for student in student_list:
         attendance = student.get('attendance', {})  
 
-        
         if not isinstance(attendance, dict):
             attendance = {}  
 
@@ -30,11 +29,12 @@ def index():
         student['attendance_percentage'] = round(percentage, 2)
 
         students.append(student)
+    
     return render_template('index.html', student_list=students)
 
-# Add student
+# Add Student
 @app.route('/add-student/', methods=['POST'])
-def addStudent():
+def add_student():
     data = request.form
     db.students.insert_one({
         'name': data['name'],
@@ -47,14 +47,15 @@ def addStudent():
 
     return redirect(url_for('index'))
 
-#delete students
+# Delete Student
 @app.route('/delete-student/<id>/')
-def deleteStudent(id):
+def delete_student(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
+# Update Student
 @app.route('/update-student/<id>/', methods=['GET', 'POST'])
-def editStudent(id):
+def edit_student(id):
     if request.method == 'GET':
         student = db.students.find_one({'_id': ObjectId(id)})
         students = db.students.find({})
@@ -78,10 +79,12 @@ def editStudent(id):
 
         return redirect(url_for('index'))
 
+# User Login
 @app.route('/login/', methods=['GET', 'POST'])
 def user_login():
     return render_template('user_login.html')
 
+# User Registration
 @app.route('/register/', methods=['GET', 'POST'])
 def user_register():
     if request.method == 'POST':
@@ -91,9 +94,6 @@ def user_register():
         name_of_college = request.form['college']
         place = request.form['place']
         country = request.form['country']
-
-        # TODO: add validation for existing users
-        # TODO: adding password encryption
 
         user = {
             'email': email,
@@ -154,41 +154,49 @@ def mark_attendance():
 
     return jsonify({"message": "Attendance recorded successfully!"}), 200
 
-@app.route('/get-student/<reg_no>', methods=['GET'])
-def get_student(reg_no):
-    student = db.students.find_one({"regNo": reg_no})
 
-    if not student:
-        return jsonify({"error": "Student not found"}), 404
+@app.route('/get-timetable/<class_name>/<view_type>', defaults={'day': None})
+@app.route('/get-timetable/<class_name>/<view_type>/<day>')
+def get_timetable(class_name, view_type, day):
+    query = {"class": class_name}
 
-    attendance_records = list(db.attendance.find({"student_id": student["_id"]}))
+    if view_type == "day" and day:
+        query["day"] = day  
+
+    timetable = db.timetables.find(query)
+
+    timetable_list = []
+    for entry in timetable:
+        for schedule in entry.get("schedule", []):
+            timetable_list.append({
+                "day": entry["day"],
+                "subject": schedule["subject"],
+                "time": schedule["time"],
+                "teacher": schedule["teacher"]
+            })
+
+    return jsonify(timetable_list)
+
+
+@app.route('/export/')
+def export_data():
+    students = db.students.find({})
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Register Number', 'Class', 'Email', 'Phone', 'Attendance %'])
+
+    for student in students:
+        attendance = student.get('attendance', {})
+        total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
+        total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
+        percentage = (total_present / total_completed) * 100 if total_completed > 0 else 0
+        writer.writerow([student['name'], student['regNo'], student['class'], student['email'], student['phone'], round(percentage, 2)])
+
+    output.seek(0)
     
-    subject_wise = {}
-    for record in attendance_records:
-        subject = record.get("subject", "Unknown") 
-        if subject not in subject_wise:
-            subject_wise[subject] = {"total": 0, "attended": 0}
+    return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
 
-        subject_wise[subject]["total"] += 1
-        if record.get("status") == "Present":
-            subject_wise[subject]["attended"] += 1
-
-    total_attended = sum(data["attended"] for data in subject_wise.values())
-    total_classes = sum(data["total"] for data in subject_wise.values())
-    overall_attendance = (total_attended / total_classes * 100) if total_classes else 100.0
-
-    return jsonify({
-        "name": student.get("name", "Unknown"),
-        "overall_attendance": round(overall_attendance, 2),
-        "subject_wise": subject_wise,
-        "attendance_records": [{
-            "subject": rec.get("subject", "Unknown"),
-            "date": rec.get("date", "").strftime("%Y-%m-%d") if rec.get("date") else "Unknown",
-            "period": rec.get("period", "Unknown"),
-            "status": rec.get("status", "Unknown")
-        } for rec in attendance_records]
-    })
-
+# View Student Attendance
 @app.route('/students/', methods=['GET', 'POST'])
 def students_page():
     student = None
@@ -212,23 +220,9 @@ def students_page():
             ) if valid_attendance else 100.0
 
             attendance_records = list(db.attendance.find({"student_id": student["_id"]}))
-    
+
     return render_template('students.html', student=student, subject_wise=subject_wise, 
                            overall_attendance=overall_attendance, attendance_records=attendance_records)
-@app.route('/export/')
-def export_data():
-    students = db.students.find({})
-    output = io.StringIO()
-    writer = csv.writer(output)
-    writer.writerow(['Name', 'Register Number', 'Class', 'Email', 'Phone'])  # Header
-    
-    for student in students:
-        writer.writerow([student['name'], student['regNo'], student['class'], student['email'], student['phone']])
-    
-    output.seek(0)
-    
-    return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
 
 if __name__ == '__main__':
     app.run(debug=True)
-
