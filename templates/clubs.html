@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %} Clubs {% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Club Management</h2>
+    
+    <div class="input-group mb-3">
+        <input type="text" id="searchRegNo" class="form-control" placeholder="Enter Register Number">
+        <div class="input-group-append">
+            <button class="btn btn-primary" onclick="searchClubMember()">Search</button>
+        </div>
+    </div>
+
+    <div id="clubDetails" style="display: none;">
+        <h3>Club Membership for <span id="studentName"></span></h3>
+        <h4>Club: <span class="badge bg-info" id="studentClub"></span></h4>
+        <h4>Role: <span class="badge bg-success" id="studentRole"></span></h4>
+
+        <h3 class="mt-4">Meeting Attendance</h3>
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="meetingAttendance"></tbody>
+        </table>
+
+        <button class="btn btn-success mt-2" onclick="markMeetingAttendance('Present')">Mark Present</button>
+        <button class="btn btn-danger mt-2" onclick="markMeetingAttendance('Absent')">Mark Absent</button>
+    </div>
+</div>
+
+<script>
+    function searchClubMember() {
+        let regNo = document.getElementById("searchRegNo").value.trim();
+
+        if (regNo === "") {
+            alert("Please enter a register number.");
+            return;
+        }
+
+        fetch(`/get-club-member/${regNo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                
+                document.getElementById("clubDetails").style.display = "block";
+                document.getElementById("studentName").innerText = data.name;
+                document.getElementById("studentClub").innerText = data.club;
+                document.getElementById("studentRole").innerText = data.role;
+                
+                let tableBody = document.getElementById("meetingAttendance");
+                tableBody.innerHTML = "";
+
+                data.meeting_records.forEach(record => {
+                    let row = `<tr><td>${record.date}</td><td>${record.status}</td></tr>`;
+                    tableBody.innerHTML += row;
+                });
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function markMeetingAttendance(status) {
+        let regNo = document.getElementById("searchRegNo").value.trim();
+
+        fetch('/mark-meeting-attendance/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ regNo: regNo, status: status })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            searchClubMember(); 
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="utf-8">
@@ -67,10 +67,6 @@
     {% block styles %} {% endblock %}
 </head>
 
-    
-
-
-
 <body>
 
     <div class="topnav">
@@ -80,14 +76,13 @@
     <div class="sidebar">
         <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
         <a href="{{ url_for('attendance_page') }}"><i class="fas fa-user-graduate"></i> Attendance</a>
-
         <a href="{{ url_for('students_page') }}"><i class="fas fa-cogs"></i> Students</a>
+        <a href="{{ url_for('clubs_page') }}"><i class="fas fa-users"></i> Clubs</a>
     </div>
 
     <div class="content">
         {% block content %} {% endblock %}
     </div>
-
 
     
     {% block scripts %} {% endblock %}
