@@ -109,40 +109,45 @@ def deleteStudent(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
-@app.route('/update-student/<student_id>/', methods=['POST'])
+@app.route('/update-student/<student_id>/', methods=['GET','POST'])
 def update_student(student_id):
-    student = db.students.find_one({"_id": ObjectId(student_id)})
-    
-    if not student:
-        return "Student not found", 404
+    if request.method == 'GET':
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+        students = db.students.find_one({})
+        return render_template('index.html', student_list=students, student=student)
+    elif request.method == 'POST':
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+        
+        if not student:
+            return "Student not found", 404
 
-    name = request.form.get("name")
-    reg_no = request.form.get("registerNumber")
-    student_class = request.form.get("class")
-    email = request.form.get("email")
-    phone = request.form.get("phone")
+        name = request.form.get("name")
+        reg_no = request.form.get("registerNumber")
+        student_class = request.form.get("class")
+        email = request.form.get("email")
+        phone = request.form.get("phone")
 
-    # Handling file upload (profile picture)
-    filename = student.get("photo")  # Keep existing photo if no new file uploaded
-    if 'photo' in request.files and request.files['photo'].filename:
-        photo = request.files['photo']
-        if allowed_file(photo.filename):
-            ext = photo.filename.rsplit('.', 1)[1].lower()
-            filename = f"{uuid.uuid4()}.{ext}"  # Unique filename
-            photo.save(os.path.join(app.config['MEDIA_FOLDER'], filename))
+        # Handling file upload (profile picture)
+        filename = student.get("photo")  # Keep existing photo if no new file uploaded
+        if 'photo' in request.files and request.files['photo'].filename:
+            photo = request.files['photo']
+            if allowed_file(photo.filename):
+                ext = photo.filename.rsplit('.', 1)[1].lower()
+                filename = f"{uuid.uuid4()}.{ext}"  # Unique filename
+                photo.save(os.path.join(app.config['MEDIA_FOLDER'], filename))
 
-    updated_data = {
-        "name": name,
-        "regNo": reg_no,
-        "class": student_class,
-        "email": email,
-        "phone": phone,
-        "photo": filename  # Update photo field
-    }
+        updated_data = {
+            "name": name,
+            "regNo": reg_no,
+            "class": student_class,
+            "email": email,
+            "phone": phone,
+            "photo": filename  # Update photo field
+        }
 
-    db.students.update_one({"_id": ObjectId(student_id)}, {"$set": updated_data})
-    
-    return redirect(url_for('index'))
+        db.students.update_one({"_id": ObjectId(student_id)}, {"$set": updated_data})
+        
+        return redirect(url_for('index'))
 
 @app.route('/login/', methods=['GET', 'POST'])
 def user_login():
