@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %} View Complaints {% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1 class="text-center text-primary">Submitted Complaints</h1>
+
+        {% if complaints %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Category</th>
+                            <th>Complaint</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for complaint in complaints %}
+                            <tr>
+                                <td>{{ complaint.name }}</td>
+                                <td>{{ complaint.email }}</td>
+                                <td>{{ complaint.category }}</td>
+                                <td>{{ complaint.message }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-center text-muted">No complaints have been submitted yet.</p>
+        {% endif %}
+    </div>
+{% endblock %}

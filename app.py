@@ -16,22 +16,40 @@ def index():
     students = []
 
     for student in student_list:
-        attendance = student.get('attendance', {})
-
+        attendance = student.get('attendance', {})  
         if not isinstance(attendance, dict):
-            attendance = {}
-
+            attendance = {}  
         total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
         total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
-
         percentage = (total_present / total_completed) * 100 if total_completed > 0 else 0
         student['attendance_percentage'] = round(percentage, 2)
-
         students.append(student)
 
     return render_template('index.html', student_list=students)
 
-# Add Student
+
+# Complaint Portal
+@app.route('/complaint-portal/', methods=['GET', 'POST'])
+def complaint_portal():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        category = request.form['category']
+        message = request.form['message']
+        
+        db.complaints.insert_one({
+            'name': name,
+            'email': email,
+            'category': category,
+            'message': message,
+            'timestamp': datetime.now()
+        })
+        
+        return redirect(url_for('complaint_portal'))
+
+    complaints = list(db.complaints.find().sort("timestamp", -1))
+    return render_template('complaint_portal.html', complaints=complaints)
+
 @app.route('/add-student/', methods=['POST'])
 def add_student():
     data = request.form
@@ -45,7 +63,7 @@ def add_student():
     })
     return redirect(url_for('index'))
 
-# Delete Student
+
 @app.route('/delete-student/<id>/')
 def delete_student(id):
     db.students.delete_one({'_id': ObjectId(id)})
@@ -56,8 +74,7 @@ def delete_student(id):
 def edit_student(id):
     if request.method == 'GET':
         student = db.students.find_one({'_id': ObjectId(id)})
-        students = db.students.find({})
-        return render_template('index.html', student=student, student_list=students)
+        return render_template('index.html', student=student)
     else:
         name = request.form['name']
         regNo = request.form['registerNumber']
@@ -74,6 +91,7 @@ def edit_student(id):
                 'phone': phone
             }
         })
+        db.students.update_one({'_id': ObjectId(id)}, {'$set': request.form})
         return redirect(url_for('index'))
 
 # Students Page (Restored)
@@ -187,14 +205,46 @@ def download_timetable(course_name):
     output.seek(0)
     return Response(output, mimetype='text/csv', headers={"Content-Disposition": f"attachment; filename={course_name}_timetable.csv"})
 
+@app.route('/register/', methods=['GET', 'POST'])
+def user_register():
+    if request.method == 'POST':
+        db.users.insert_one(request.form)
+        return redirect(url_for('user_login'))
+    return render_template('user_register.html')
 
-# Attendance Page
 @app.route('/attendance/')
 def attendance_page():
     student_list = list(db.students.find({}).sort("regNo", 1))
     return render_template('attendance.html', student_list=student_list)
 
-# Export Student Data as CSV
+
+@app.route('/attendance/', methods=['POST'])
+def mark_attendance():
+    data = request.json
+    for record in data:
+        student_id = record.get('student_id')
+        subject = record.get('subject')
+        status = record.get('status')
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+        if student:
+            attendance = student.get('attendance', {})
+            subject_data = attendance.get(subject, {'total': 0, 'attended': 0})
+            subject_data['total'] += 1
+            if status == "Present":
+                subject_data['attended'] += 1
+            attendance[subject] = subject_data
+            db.students.update_one({"_id": ObjectId(student_id)}, {"$set": {"attendance": attendance}})
+    return jsonify({"message": "Attendance recorded successfully!"}), 200
+
+@app.route('/students/', methods=['GET', 'POST'])
+def students_page():
+    student = None
+    if request.method == 'POST':
+        reg_no = request.form.get('regNo')
+        student = db.students.find_one({"regNo": reg_no})
+    return render_template('students.html', student=student)
+
+>>>>>>> 64518b9f6b378a0fdb43ad705a10056bbbfeec8d
 @app.route('/export/')
 def export_data():
     students = db.students.find({})
@@ -211,6 +261,12 @@ def export_data():
 
     output.seek(0)
     return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
+
+@app.route('/view_complaints')
+def view_complaints():
+    complaints = list(db.complaints.find().sort("timestamp", -1))  # Fetch complaints from MongoDB
+    return render_template('view_complaints.html', complaints=complaints)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
