@@ -1,3 +1,17 @@
 .body{
     background-color: wheat;
 }
+body.dark-mode {
+    background-color: #121212;
+    color: #ffffff;
+}
+
+.dark-mode a {
+    color: #bb86fc;
+}
+
+.dark-mode button {
+    background-color: #333;
+    color: white;
+    border: 1px solid #555;
+}
