@@ -194,6 +194,7 @@ def download_timetable(course_name):
     # CSV Header
     writer.writerow(['Day', 'Course', 'Subject', 'Lecture Slot'])
 
+
     for entry in timetable:
         writer.writerow([
             entry.get('day', 'Unknown'), 
@@ -244,7 +245,6 @@ def students_page():
         student = db.students.find_one({"regNo": reg_no})
     return render_template('students.html', student=student)
 
->>>>>>> 64518b9f6b378a0fdb43ad705a10056bbbfeec8d
 @app.route('/export/')
 def export_data():
     students = db.students.find({})
