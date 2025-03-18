@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Student Attendance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Student Attendance</h2>
+
+    
+    <div class="input-group mb-3">
+        <input type="text" id="searchRegNo" class="form-control" placeholder="Enter Register Number">
+        <div class="input-group-append">
+            <button class="btn btn-primary" onclick="searchStudent()">Search</button>
+        </div>
+    </div>
+
+    <div id="studentDetails" style="display: none;">
+        <h3>Attendance Report for <span id="studentName"></span></h3>
+        <h4>Overall Attendance: <span class="badge badge-success" id="overallAttendance"></span></h4>
+
+        <table class="table table-bordered mt-3">
+            <thead>
+                <tr>
+                    <th>Subject</th>
+                    <th>Total Classes</th>
+                    <th>Classes Attended</th>
+                    <th>Attendance (%)</th>
+                    <th>Absent Details</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTable"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function searchStudent() {
+        let regNo = document.getElementById("searchRegNo").value.trim();
+
+        if (regNo === "") {
+            alert("Please enter a register number.");
+            return;
+        }
+
+        fetch(`/get-student/${regNo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+
+                document.getElementById("studentDetails").style.display = "block";
+                document.getElementById("studentName").innerText = data.name;
+                document.getElementById("overallAttendance").innerText = data.overall_attendance.toFixed(2) + "%";
+
+                let tableBody = document.getElementById("attendanceTable");
+                tableBody.innerHTML = "";
+
+                for (let subject in data.subject_wise) {
+                    let row = `<tr>
+                        <td>${subject}</td>
+                        <td>${data.subject_wise[subject].total}</td>
+                        <td>${data.subject_wise[subject].attended}</td>
+                        <td>${(data.subject_wise[subject].attended / data.subject_wise[subject].total * 100).toFixed(2)}%</td>
+                        <td>
+                            <button class="btn btn-info btn-sm" onclick="toggleAbsentDetails('${subject}')">View Absent Details</button>
+                            <div id="absent-${subject}" style="display: none;">
+                                <ul>`;
+
+                    data.attendance_records.forEach(record => {
+                        if (record.subject === subject && record.status === "Absent") {
+                            row += `<li>${record.date} - Period ${record.period}</li>`;
+                        }
+                    });
+
+                    row += `</ul></div></td></tr>`;
+                    tableBody.innerHTML += row;
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function toggleAbsentDetails(subject) {
+        let details = document.getElementById("absent-" + subject);
+        details.style.display = details.style.display === "none" ? "block" : "none";
+    }
+</script>
+
+{% endblock %}
