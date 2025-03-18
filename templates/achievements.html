@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Student Achievements{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4 text-center">Student Achievements</h2>
+
+    <div class="input-group mb-3">
+        <input type="text" id="searchRegNo" class="form-control" placeholder="Enter Register Number">
+        <div class="input-group-append">
+            <button class="btn btn-primary" onclick="searchStudent()">Search</button>
+        </div>
+    </div>
+
+    <div id="studentDetails" style="display: none;">
+        <h3>Achievements for <span id="studentName"></span></h3>
+        <p>Register Number: <span id="studentRegNo"></span></p>
+        <p>Class: <span id="studentClass"></span></p>
+        <p>Email: <span id="studentEmail"></span></p>
+        <p>Phone: <span id="studentPhone"></span></p>
+
+        <button class="btn btn-success mt-3" onclick="openAchievementPopup()">Add Achievement</button>
+        <button class="btn btn-info mt-3" onclick="toggleViewAchievements()">View Achievements</button>
+
+        <div id="achievementPopup" class="popup" style="display: none;">
+            <div class="popup-content">
+                <span class="close" onclick="closeAchievementPopup()">&times;</span>
+                <h4>Add Achievement</h4>
+                <form action="{{ url_for('achievements') }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" id="hiddenRegNo" name="regNo">
+                    <div class="form-group">
+                        <label for="title">Title</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="Enter Title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter Description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="file">Upload File</label>
+                        <input type="file" class="form-control-file" id="file" name="file" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                </form>
+            </div>
+        </div>
+
+        <div id="achievementsSection" style="display: none;">
+            <h4 class="mt-4">Achievements</h4>
+            <ul id="activitiesList" class="list-group"></ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function searchStudent() {
+        let regNo = document.getElementById("searchRegNo").value.trim();
+        if (regNo === "") {
+            alert("Please enter a register number.");
+            return;
+        }
+        fetch(`/get-student/${regNo}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                    return;
+                }
+                document.getElementById("studentDetails").style.display = "block";
+                document.getElementById("studentName").innerText = data.name;
+                document.getElementById("studentRegNo").innerText = data.regNo;
+                document.getElementById("studentClass").innerText = data.class;
+                document.getElementById("studentEmail").innerText = data.email;
+                document.getElementById("studentPhone").innerText = data.phone;
+                document.getElementById("hiddenRegNo").value = data.regNo;
+                let activitiesList = document.getElementById("activitiesList");
+                activitiesList.innerHTML = "";
+                if (data.achievements && data.achievements.length > 0) {
+                    data.achievements.forEach(activity => {
+                        let listItem = `<li class='list-group-item'><strong>${activity.title}</strong><br>${activity.description}<br><a href="${activity.file}" target="_blank">View File</a></li>`;
+                        activitiesList.innerHTML += listItem;
+                    });
+                } else {
+                    activitiesList.innerHTML = "<li class='list-group-item'>No achievements found.</li>";
+                }
+            })
+            .catch(error => console.error("Error:", error));
+    }
+
+    function openAchievementPopup() {
+        document.getElementById("achievementPopup").style.display = "flex";
+    }
+
+    function closeAchievementPopup() {
+        document.getElementById("achievementPopup").style.display = "none";
+    }
+
+    function toggleViewAchievements() {
+        let section = document.getElementById("achievementsSection");
+        section.style.display = section.style.display === "none" ? "block" : "none";
+    }
+</script>
+
+<style>
+    .container {
+        margin-top: 20px;
+    }
+    .input-group {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    #studentDetails {
+        margin-top: 20px;
+    }
+    .list-group-item {
+        margin-bottom: 10px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    .list-group-item strong {
+        font-size: 1.2em;
+    }
+    .popup {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .popup-content {
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+        position: relative;
+        text-align: center;
+    }
+    .close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 24px;
+        cursor: pointer;
+    }
+</style>
+
+{% endblock %}
