@@ -219,5 +219,42 @@ def marks(st_class, regNo):
     return render_template('marks.html', student=student, error=error, success=success)
 
 
+@app.route('/leave/', methods=['GET', 'POST'])
+def leave_page():
+    db = client['students']  # Get database connection
+
+    if request.method == 'GET':
+        students = list(db.students.find({}, {"_id": 1, "name": 1, "regNo": 1}))  # Fetch student list
+        return render_template('leave.html', students=students)  
+
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({"error": "Unsupported Media Type. Expected application/json."}), 415
+
+    data = request.get_json()
+    if not isinstance(data, list):
+        return jsonify({"error": "Invalid data format"}), 400
+
+    for record in data:
+        student_id = record.get('student_id')
+        date = datetime.strptime(record.get('date'), "%Y-%m-%d")
+        reason = record.get('reason')
+        status = "Pending"  # Default status
+
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+
+        if student:
+            leave_request = {
+                "student_id": ObjectId(student_id),
+                "date": date,
+                "reason": reason,
+                "status": status,
+                "applied_on": datetime.utcnow()
+            }
+
+            db.leaves.insert_one(leave_request)
+
+    return jsonify({"message": "Leave application submitted successfully!"}), 200
+
+
 if __name__ == '__main__':
     app.run(debug=True)
