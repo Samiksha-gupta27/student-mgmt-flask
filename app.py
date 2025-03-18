@@ -268,5 +268,96 @@ def view_complaints():
     return render_template('view_complaints.html', complaints=complaints)
 
 
+######################################################################################
+#                     Adding Mark                                                     |
+######################################################################################
+
+@app.route('/search-marks/', methods=['GET', 'POST'])
+def search_marks():
+    if request.method == 'POST':
+        reg_no = request.form.get('regNo')
+        student = db.students.find_one({'regNo': reg_no})
+
+        if student:
+            return redirect(url_for('marks', st_class=student['class'], regNo=student['regNo']))
+        else:
+            return render_template('search_marks.html', error="No student found.")
+    return render_template('search_marks.html')
+
+
+@app.route('/marks/<st_class>/<regNo>/', methods=['GET', 'POST'])
+def marks(st_class, regNo):
+
+    student = db.students.find_one({'regNo': regNo, 'class': st_class})
+
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        marks = request.form.get('marks', '').strip()
+
+        if not subject or not marks:
+            error = "All fields are required."
+        elif not marks.isdigit() or not (0 <= int(marks) <= 100):
+            error = "Marks must be between 0 and 100."
+        else:
+            existing_subjects = [mark['subject'].lower()
+                                 for mark in student.get('marks', [])]
+            if subject.lower() in existing_subjects:
+                error = f"Marks for '{subject}' already exist."
+            else:
+                db.students.update_one(
+                    {'regNo': regNo, 'class': st_class},
+                    {'$push': {
+                        'marks': {'subject': subject, 'marks': int(marks)}}}
+                )
+
+                student = db.students.find_one(
+                    {'regNo': regNo, 'class': st_class})
+
+                success = f"Marks for '{subject}' added successfully!"
+
+    return render_template('marks.html', student=student, error=error, success=success)
+
+
+@app.route('/leave/', methods=['GET', 'POST'])
+def leave_page():
+    db = client['students']  # Get database connection
+
+    if request.method == 'GET':
+        students = list(db.students.find({}, {"_id": 1, "name": 1, "regNo": 1}))  # Fetch student list
+        return render_template('leave.html', students=students)  
+
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({"error": "Unsupported Media Type. Expected application/json."}), 415
+
+    data = request.get_json()
+    if not isinstance(data, list):
+        return jsonify({"error": "Invalid data format"}), 400
+
+    for record in data:
+        student_id = record.get('student_id')
+        date = datetime.strptime(record.get('date'), "%Y-%m-%d")
+        reason = record.get('reason')
+        status = "Pending"  # Default status
+
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+
+        if student:
+            leave_request = {
+                "student_id": ObjectId(student_id),
+                "date": date,
+                "reason": reason,
+                "status": status,
+                "applied_on": datetime.utcnow()
+            }
+
+            db.leaves.insert_one(leave_request)
+
+    return jsonify({"message": "Leave application submitted successfully!"}), 200
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
