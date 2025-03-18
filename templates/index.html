@@ -19,6 +19,9 @@
                 <a href="{{ url_for('export_data') }}" class="btn btn-primary">
                     Download CSV
                 </a>
+                <a href="{{ url_for('timetable_page') }}" class="btn btn-secondary">
+                    Manage Timetable
+                </a>
             </div>            
             <div class="col-9">
                 {% if student_list %}
@@ -61,7 +64,7 @@
                 {% endif %}
             </div>
 
-            <!-- Right Panel: Add Student Form & Time Table -->
+            <!-- Right Panel: Add Student Form -->
             <div class="col-3">
                 <form class="mt-4" method="POST" 
                     action="/{{ ('update-student/' ~ student._id) if student else 'add-student' }}/"
@@ -100,67 +103,6 @@
                         </button>
                     </div>
                 </form>
-
-                <!-- Time Table Selection -->
-                <div class="mt-5">
-                    <h5>View Time Table</h5>
-                    <hr />
-                    <div class="mb-3">
-                        <label for="classDropdown" class="form-label">Select Class</label>
-                        <select id="classDropdown" class="form-select">
-                            <option value="">-- Select Class --</option>
-                            <option value="10A">10A</option>
-                            <option value="10B">10B</option>
-                            <option value="11A">11A</option>
-                            <option value="11B">11B</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="viewType" class="form-label">Select View Type</label>
-                        <select id="viewType" class="form-select" onchange="toggleDaySelection()">
-                            <option value="week">Week-wise</option>
-                            <option value="day">Day-wise</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3" id="daySelection" style="display: none;">
-                        <label for="dayDropdown" class="form-label">Select Day</label>
-                        <select id="dayDropdown" class="form-select">
-                            <option value="Monday">Monday</option>
-                            <option value="Tuesday">Tuesday</option>
-                            <option value="Wednesday">Wednesday</option>
-                            <option value="Thursday">Thursday</option>
-                            <option value="Friday">Friday</option>
-                            <option value="Saturday">Saturday</option>
-                            <option value="Sunday">Sunday</option>
-                        </select>
-                    </div>
-
-                    <button type="button" class="btn btn-primary w-100" onclick="fetchTimetable()">View Time Table</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Time Table Display -->
-        <div class="row mt-4">
-            <div class="col-12">
-                <h3 class="text-center">Time Table</h3>
-                <table class="table table-bordered mt-3">
-                    <thead>
-                        <tr>
-                            <th>Day</th>
-                            <th>Subject</th>
-                            <th>Time</th>
-                            <th>Teacher</th>
-                        </tr>
-                    </thead>
-                    <tbody id="timetableBody">
-                        <tr>
-                            <td colspan="4" class="text-center">Select a class to view the timetable</td>
-                        </tr>
-                    </tbody>
-                </table>
             </div>
         </div>
 
@@ -171,55 +113,4 @@
 {% block scripts %}
     <script type="text/javascript" 
     src="{{ url_for('static', filename='js/index.js') }}"></script>
-
-    <script>
-        function toggleDaySelection() {
-            let viewType = document.getElementById("viewType").value;
-            let daySelection = document.getElementById("daySelection");
-
-            if (viewType === "day") {
-                daySelection.style.display = "block";  // Show day dropdown
-            } else {
-                daySelection.style.display = "none";  // Hide day dropdown
-            }
-        }
-
-        function fetchTimetable() {
-            let selectedClass = document.getElementById("classDropdown").value;
-            let viewType = document.getElementById("viewType").value;
-            let selectedDay = document.getElementById("dayDropdown").value;
-            let timetableBody = document.getElementById("timetableBody");
-
-            if (!selectedClass) {
-                alert("Please select a class.");
-                return;
-            }
-
-            let url = `/get-timetable/${selectedClass}/${viewType}`;
-            if (viewType === "day") {
-                url += `/${selectedDay}`;
-            }
-
-            fetch(url)
-                .then(response => response.json())
-                .then(data => {
-                    timetableBody.innerHTML = "";
-                    if (data.length === 0) {
-                        timetableBody.innerHTML = "<tr><td colspan='4' class='text-center'>No timetable found.</td></tr>";
-                        return;
-                    }
-
-                    data.forEach(entry => {
-                        let row = `<tr>
-                            <td>${entry.day}</td>
-                            <td>${entry.subject}</td>
-                            <td>${entry.time}</td>
-                            <td>${entry.teacher}</td>
-                        </tr>`;
-                        timetableBody.innerHTML += row;
-                    });
-                })
-                .catch(error => console.error("Error fetching timetable:", error));
-        }
-    </script>
 {% endblock %}
