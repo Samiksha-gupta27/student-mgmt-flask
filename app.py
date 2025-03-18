@@ -19,6 +19,7 @@ def index():
         attendance = student.get('attendance', {})  
         if not isinstance(attendance, dict):
             attendance = {}  
+
         total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
         total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
         percentage = (total_present / total_completed) * 100 if total_completed > 0 else 0
@@ -50,6 +51,7 @@ def complaint_portal():
     complaints = list(db.complaints.find().sort("timestamp", -1))
     return render_template('complaint_portal.html', complaints=complaints)
 
+
 @app.route('/add-student/', methods=['POST'])
 def add_student():
     data = request.form
@@ -59,6 +61,8 @@ def add_student():
         'class': data['class'],
         'email': data['email'],
         'phone': data['phone'],
+        'club': data.get('club', "No Club"),
+        'role': data.get('role', "Member"),
         'attendance': {}
     })
     return redirect(url_for('index'))
@@ -68,6 +72,79 @@ def add_student():
 def delete_student(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
+
+
+@app.route('/update-student/<id>/', methods=['POST'])
+def editStudent(id):
+    name = request.form['name']
+    regNo = request.form['registerNumber']
+    st_class = request.form['class']
+    email = request.form['email']
+    phone = request.form['phone']
+    club = request.form.get('club', "No Club")
+    role = request.form.get('role', "Member")
+
+    db.students.update_one({'_id': ObjectId(id)}, {
+        '$set': {
+            'name': name,
+            'regNo': regNo,
+            'class': st_class,
+            'email': email,
+            'phone': phone,
+            'club': club,
+            'role': role
+        }
+    })
+    return redirect(url_for('index'))
+
+@app.route('/clubs/')
+def clubs_page():
+    return render_template('clubs.html')
+
+@app.route('/get-club-member/<reg_no>', methods=['GET'])
+def get_club_member(reg_no):
+    student = db.students.find_one({"regNo": reg_no})
+    if not student:
+        return jsonify({"error": "Student not found"}), 404
+    
+    meeting_records = list(db.club_attendance.find({"student_id": student["_id"]}))
+    return jsonify({
+        "name": student.get("name", "Unknown"),
+        "club": student.get("club", "No Club"),
+        "role": student.get("role", "Member"),
+        "meeting_records": [{
+            "date": rec.get("date", "Unknown"),
+            "status": rec.get("status", "Unknown")
+        } for rec in meeting_records]
+    })
+
+@app.route('/mark-meeting-attendance/', methods=['POST'])
+def mark_meeting_attendance():
+    data = request.json
+    reg_no = data.get('regNo')
+    status = data.get('status')
+    student = db.students.find_one({"regNo": reg_no})
+    
+    if not student:
+        return jsonify({"error": "Student not found"}), 404
+
+    db.club_attendance.insert_one({
+        "student_id": student["_id"],
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "status": status
+    })
+    return jsonify({"message": "Attendance recorded successfully!"}), 200
+
+@app.route('/attendance/')
+def attendance_page():
+    student_list = list(db.students.find({}).sort("regNo", 1))
+    return render_template('attendance.html', student_list=student_list)
+
+@app.route('/students/')
+def students_page():
+    student_list = db.students.find({}).sort("regNo", 1)
+    return render_template('students.html', student_list=student_list)
+
 
 # Update Student
 @app.route('/update-student/<id>/', methods=['GET', 'POST'])
@@ -478,6 +555,7 @@ def leave_page():
             db.leaves.insert_one(leave_request)
 
     return jsonify({"message": "Leave application submitted successfully!"}), 200
+
 
 
 if __name__ == '__main__':

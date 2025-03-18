@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html>
 
 <head>
     <meta charset="utf-8">
@@ -115,6 +115,7 @@
         <a href="{{ url_for('index') }}"><i class="fas fa-home"></i> Home</a>
         <a href="{{ url_for('attendance_page') }}"><i class="fas fa-user-graduate"></i> Attendance</a>
         <a href="{{ url_for('students_page') }}"><i class="fas fa-cogs"></i> Students</a>
+        <a href="{{ url_for('clubs_page') }}"><i class="fas fa-users"></i> Clubs</a>
         <a href="{{ url_for('achievements') }}"><i class="fas fa-cogs"></i> Achievements</a>
         <a href="{{ url_for('search_marks') }}"><i class="fa-solid fa-clipboard-user"></i> Marks</a>
         <a href="{{ url_for('remark') }}"><i class="fas fa-comment-alt"></i> Remarks</a>
@@ -125,6 +126,7 @@
         {% block content %} {% endblock %}
     </div>
 
+  
     {% block scripts %} {% endblock %}
 
     <!-- Bootstrap JS -->

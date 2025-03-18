@@ -32,6 +32,13 @@
                 {% if student_list %}
                 {% for student in student_list %}
                 <div class="card mb-3">
+
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-2 d-flex justify-content-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                class="img-fluid rounded-start" alt="User Image" style="max-width: 80px;">
+                        </div>
+
                     <div class="row g-0">
                         <div class="col-md-2">
                             <img src="https://via.placeholder.com/100" class="img-fluid rounded-start" alt="Profile">
@@ -78,6 +85,7 @@
                         </div>
 
                         <!-- Student Details -->
+
                         <div class="col-md-7">
                             <div class="card-body">
                                 <div class="fw-bold fs-5">{{ student_i.name }}</div>
@@ -88,6 +96,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-md-3 d-flex flex-column align-items-center">
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="/update-student/{{student._id}}/" class="btn btn-sm btn-primary">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="/delete-student/{{student._id}}/" class="btn btn-sm btn-danger">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-users"></i>
+                                <span class="fw-bold">{{ student.club }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-12 text-center mt-2">
+                            <span>Attendance: {{ student.attendance_percentage }}%</span>
+
 
                         <!-- Edit & Delete Buttons -->
                         <div class="col-md-3 text-center">
@@ -100,6 +126,7 @@
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </form>
+
                         </div>
 
                     </div>
@@ -156,6 +183,20 @@
                         <input type="number" name="attendance" id="attendance" class="form-control"
                         value="{{ student.attendance_percentage if student else '' }}" placeholder="Attendance %" required>
                     </div>
+
+                  
+                    <div class="mb-3">
+                        <select name="club" id="club" class="form-control">
+                            <option value="No Club" {% if student and student.club == "No Club" %}selected{% endif %}>No Club</option>
+                            <option value="Football Club" {% if student and student.club == "Football Club" %}selected{% endif %}>Football Club</option>
+                            <option value="Drama Club" {% if student and student.club == "Drama Club" %}selected{% endif %}>Drama Club</option>
+                            <option value="Science Club" {% if student and student.club == "Science Club" %}selected{% endif %}>Science Club</option>
+                            <option value="Music Club" {% if student and student.club == "Music Club" %}selected{% endif %}>Music Club</option>
+                        </select>
+                    </div>
+                    <div class="">
+
+             
                     <div>
                         <button type="submit" class="btn btn-primary">
                             {{ 'Update' if student else 'Add' }} Student
@@ -176,6 +217,7 @@
                     </div>
 
                     <div class="d-grid">
+
                         <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
                     </div>
                 </form>
