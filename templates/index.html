@@ -20,6 +20,28 @@
                 <input type="text" id="searchBox" class="form-control mb-3"
                     placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
             </div>
+            <div class="col-12 text-end mt-3">
+                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
+                    Download CSV
+                </a>
+                <a href="{{ url_for('timetable_page') }}" class="btn btn-secondary">
+                    Manage Timetable
+                </a>
+            </div>            
+            <div class="col-9">
+                {% if student_list %}
+                {% for student in student_list %}
+                <div class="card mb-3">
+
+                    <div class="row g-0 align-items-center">
+                        <div class="col-md-2 d-flex justify-content-center">
+                            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
+                                class="img-fluid rounded-start" alt="User Image" style="max-width: 80px;">
+                        </div>
+
+                    <div class="row g-0">
+                        <div class="col-md-2">
+                            <img src="https://via.placeholder.com/100" class="img-fluid rounded-start" alt="Profile">
 
             <div class="filter-container">
                 <form method="GET" action="{{ url_for('index') }}" class="d-flex align-items-center gap-2">
@@ -57,12 +79,13 @@
                     <div class="row g-0 align-items-center">
                         <!-- Profile Picture -->
                         <div class="col-md-2 text-center p-2">
-                            <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else url_for('media', filename='default.png') }}"
+                            <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else '' }}"
                                 class="img-fluid rounded-circle" alt="Profile Picture"
                                 style="width: 80px; height: 80px; object-fit: cover;">
                         </div>
 
                         <!-- Student Details -->
+
                         <div class="col-md-7">
                             <div class="card-body">
                                 <div class="fw-bold fs-5">{{ student_i.name }}</div>
@@ -73,6 +96,24 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="col-md-3 d-flex flex-column align-items-center">
+                            <div class="d-flex gap-2 mb-2">
+                                <a href="/update-student/{{student._id}}/" class="btn btn-sm btn-primary">
+                                    <i class="fa-solid fa-pen"></i>
+                                </a>
+                                <a href="/delete-student/{{student._id}}/" class="btn btn-sm btn-danger">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </a>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-users"></i>
+                                <span class="fw-bold">{{ student.club }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-12 text-center mt-2">
+                            <span>Attendance: {{ student.attendance_percentage }}%</span>
+
 
                         <!-- Edit & Delete Buttons -->
                         <div class="col-md-3 text-center">
@@ -85,6 +126,7 @@
                                     <i class="fa-solid fa-trash-can"></i>
                                 </button>
                             </form>
+
                         </div>
 
                     </div>
@@ -93,6 +135,16 @@
                 {% endfor %}
                 {% endif %}
             </div>
+
+            <!-- Right Panel: Add Student Form -->
+            <div class="col-3">
+                <form class="mt-4" method="POST" 
+                    action="/{{ ('update-student/' ~ student._id) if student else 'add-student' }}/"
+                >
+                    <div class="mb-3">
+                        <h5>Add New Student</h5>
+                        <hr />
+                    </div>
         </div>
 
         <!-- Add / Update Student Form -->
@@ -106,7 +158,7 @@
                 <h5 class="text-center">{{ 'Update' if student else 'Add' }} Student</h5>
                 <hr>
                 <form method="POST" enctype="multipart/form-data"
-                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('add_student') }}">
+                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('addStudent') }}">
                     <div class="mb-3">
                         <input type="text" name="name" id="name" class="form-control"
                             value="{{ student.name if student else '' }}" placeholder="Name" required>
@@ -127,6 +179,28 @@
                         <input type="text" name="phone" id="phone" class="form-control"
                             value="{{ student.phone if student else '' }}" placeholder="Phone" required>
                     </div>
+                    <div class="mb-3">
+                        <input type="number" name="attendance" id="attendance" class="form-control"
+                        value="{{ student.attendance_percentage if student else '' }}" placeholder="Attendance %" required>
+                    </div>
+
+                  
+                    <div class="mb-3">
+                        <select name="club" id="club" class="form-control">
+                            <option value="No Club" {% if student and student.club == "No Club" %}selected{% endif %}>No Club</option>
+                            <option value="Football Club" {% if student and student.club == "Football Club" %}selected{% endif %}>Football Club</option>
+                            <option value="Drama Club" {% if student and student.club == "Drama Club" %}selected{% endif %}>Drama Club</option>
+                            <option value="Science Club" {% if student and student.club == "Science Club" %}selected{% endif %}>Science Club</option>
+                            <option value="Music Club" {% if student and student.club == "Music Club" %}selected{% endif %}>Music Club</option>
+                        </select>
+                    </div>
+                    <div class="">
+
+             
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'Update' if student else 'Add' }} Student
+                        </button>
                     <div class="mb-3 text-center">
                         <label class="form-label fw-bold">Profile Picture</label>
                         <br>
@@ -143,13 +217,13 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }}
-                            Student</button>
+
+                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
                     </div>
                 </form>
             </div>
         </div>
-
+        
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %} Student Complaint Portal {% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="card shadow-lg p-4">
+            <h1 class="text-center text-primary">Student Complaint Portal</h1>
+            <p class="text-center text-muted">Submit your complaint, and we will address it.</p>
+
+            <form id="complaint-form" method="POST" action="{{ url_for('complaint_portal') }}">
+                <div class="mb-3">
+                    <label for="name" class="form-label">Your Name</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="Enter your full name" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Your Email</label>
+                    <input type="email" id="email" name="email" class="form-control" placeholder="Enter your email" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="category" class="form-label">Complaint Category</label>
+                    <select id="category" name="category" class="form-select" required>
+                        <option value="" disabled selected>Select a category</option>
+                        <option value="academic">Academic</option>
+                        <option value="facilities">Facilities</option>
+                        <option value="harassment">Harassment</option>
+                        <option value="others">Others</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="message" class="form-label">Complaint Details</label>
+                    <textarea id="message" name="message" class="form-control" rows="5" placeholder="Describe your complaint..." required></textarea>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                    <a href="{{ url_for('view_complaints') }}" class="btn btn-outline-secondary">View Complaints</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("complaint-form").addEventListener("submit", function(event) {
+            alert("Your complaint has been submitted successfully!");
+        });
+    </script>
+
+{% endblock %}

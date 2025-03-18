@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %} Manage Timetable {% endblock %}
+
+{% block styles %}
+    <link type="text/css" href="{{ url_for('static', filename='css/timetable.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center">Manage Timetable</h2>
+    <hr />
+
+    <!-- Add Course Form -->
+    <div class="mb-4">
+        <h4>Add a Course</h4>
+        <form id="addCourseForm">
+            <input type="text" id="courseName" class="form-control mb-2" placeholder="Enter Course Name" required>
+            <button type="submit" class="btn btn-success">Add Course</button>
+        </form>
+    </div>
+
+    <!-- Add Subject Form -->
+    <div class="mb-4">
+        <h4>Add a Subject</h4>
+        <form id="addSubjectForm">
+            <select id="courseDropdown" class="form-select mb-2">
+                <option value="">-- Select Course --</option>
+            </select>
+
+            <input type="text" id="subjectName" class="form-control mb-2" placeholder="Enter Subject Name" required>
+
+            <label>Select Day:</label>
+            <select id="dayDropdown" class="form-select mb-2">
+                <option value="Monday">Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+            </select>
+
+            <label>Select Lecture Slot:</label>
+            <select id="lectureSlot" class="form-select mb-2">
+                <option value="9:00-9:50">9:00 - 9:50 AM</option>
+                <option value="10:00-10:50">10:00 - 10:50 AM</option>
+                <option value="11:00-11:50">11:00 - 11:50 AM</option>
+                <option value="12:00-12:50">12:00 - 12:50 PM</option>
+                <option value="2:00-2:50">2:00 - 2:50 PM</option>
+                <option value="3:00-3:50">3:00 - 3:50 PM</option>
+                <option value="4:00-4:50">4:00 - 4:50 PM</option>
+            </select>
+
+            <button type="submit" class="btn btn-primary">Add Subject</button>
+        </form>
+    </div>
+
+    <!-- Select Course to View Timetable -->
+    <div class="mb-4">
+        <h4>View Weekly Timetable</h4>
+        <select id="timetableCourseDropdown" class="form-select mb-3"></select>
+        <button class="btn btn-primary" onclick="loadWeeklyTimetable()">View Timetable</button>
+    </div>
+
+    <!-- Weekly Timetable -->
+    <div class="mb-4">
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Day</th>
+                    <th>9:00-9:50</th>
+                    <th>10:00-10:50</th>
+                    <th>11:00-11:50</th>
+                    <th>12:00-12:50</th>
+                    <th>2:00-2:50</th>
+                    <th>3:00-3:50</th>
+                    <th>4:00-4:50</th>
+                </tr>
+            </thead>
+            <tbody id="weeklyTimetableBody">
+                <tr><td colspan="8" class="text-center">Select a course to view the timetable</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Download Timetable Button -->
+    <div class="text-center">
+        <a id="downloadTimetableBtn" class="btn btn-secondary">Download Timetable (CSV)</a>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="{{ url_for('static', filename='js/timetable.js') }}"></script>
+
+<script>
+    document.getElementById("timetableCourseDropdown").addEventListener("change", function() {
+        let selectedCourse = this.value;
+        let downloadBtn = document.getElementById("downloadTimetableBtn");
+        if (selectedCourse) {
+            downloadBtn.href = `/download-timetable/${selectedCourse}`;
+        } else {
+            downloadBtn.removeAttribute("href");
+        }
+    });
+</script>
+{% endblock %}
