@@ -3,99 +3,171 @@
 {% block title %} Home {% endblock %}
 
 {% block styles %}
-    <link type="text/css" 
-    href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
+    <link type="text/css" href="{{ url_for('static', filename='css/index.css') }}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-
     <div class="container mt-5">
         <div class="row">
             <div class="col-12 text-center fs-4 fst-italic">
-                Student List Management
+                <strong>Student List Management</strong>
                 <hr />
             </div>
-            <div class="col-9">
-                {% if student_list %}
-                {% for student in student_list %}
-                <div class="card mb-3">
-                    <div class="row g-0">
-                        <div class="col-md-2">
-                            <img src="data:image/png;base64,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"
-                                class="img-fluid rounded-start" alt="...">
-                        </div>
-                        <div class="col-md-8">
-                            <div class="card-body">
-                                <div class="fw-bold fs-5">
-                                    {{ student.name }}
+
+            <!-- Search Bar -->
+            <div class="col-md-8">
+                <input type="text" id="searchBox" class="form-control mb-3" 
+                       placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
+            
+            <!-- Sorting & Filtering Form -->
+                    <form method="GET" action="{{ url_for('index') }}">
+                        <label for="sort_by">Sort By:</label>
+                        <select name="sort_by" id="sort_by">
+                            <option value="name_asc">Name (A-Z)</option>
+                            <option value="name_desc">Name (Z-A)</option>
+                            <option value="regNo_asc">Register Number (Ascending)</option>
+                            <option value="regNo_desc">Register Number (Descending)</option>
+                            <option value="class_asc">Class (A-Z)</option>
+                            <option value="class_desc">Class (Z-A)</option>
+                        </select>
+
+                        <label for="class_filter">Filter by Class:</label>
+                        <select name="class_filter" id="class_filter">
+                            <option value="">All Classes</option>
+                            {% for class_name in unique_classes %}
+                            <option value="{{ class_name }}" {% if request.args.get('class_filter') == class_name %}selected{% endif %}>
+                                {{ class_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+
+                        <button type="submit">Apply</button>
+                    </form>
+                       
+                <!-- Student List -->
+                <div id="studentList">
+                    {% if student_list %}
+                        {% for student in student_list %}
+                        
+                            <div class="card mb-3 shadow-sm student-card" 
+                                 data-name="{{ student.name|lower }}" 
+                                 data-regno="{{ student.regNo|lower }}" 
+                                 data-class="{{ student.class|lower }}">
+                                <div class="row g-0 align-items-center">
+                                    <!-- Profile Picture -->
+                                    <div class="col-md-2 text-center p-2">
+                                        <img src="{{ url_for('media', filename=student.photo) if student.photo else url_for('media', filename='default.png') }}" 
+                                             class="img-fluid rounded-circle" alt="Profile Picture" style="width: 80px; height: 80px; object-fit: cover;">
+                                    </div>
+
+                                    <!-- Student Details -->
+                                    <div class="col-md-7">
+                                        <div class="card-body">
+                                            <div class="fw-bold fs-5">{{ student.name }}</div>
+                                            <div class="fst-italic">{{ student.regNo }} | {{ student.class }}</div>
+                                            <div><i class="fa-solid fa-envelope"></i> {{ student.email }}</div>
+                                            <div><i class="fa-solid fa-phone"></i> {{ student.phone }}</div>
+                                            <div class="mt-2"><strong>Attendance:</strong> {{ student.attendance_percentage }}%</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Edit & Delete Buttons -->
+                                    <div class="col-md-3 text-center">
+                                        <a href="/update-student/{{ student._id }}/" class="btn btn-sm btn-primary me-2">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </a>
+                                        <form action="/delete-student/{{ student._id }}/" method="POST" style="display:inline;" 
+                                              onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                            <button type="submit" class="btn btn-sm btn-danger">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+
                                 </div>
-                                <div class="fst-italic">
-                                    {{student.regNo}} | {{student.class}}
-                                </div>
-                                <div>
-                                    <i class="fa-solid fa-envelope"></i> {{student.email}}
-                                </div>
-                                <div>
-                                    <i class="fa-solid fa-phone"></i> {{student.phone}}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-2 d-flex align-items-center gap-2">
-                            <a href="/update-student/{{student._id}}/" class="btn btn-sm btn-primary">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
-                            <a href="/delete-student/{{student._id}}/" class="btn btn-sm btn-danger">
-                                <i class="fa-solid fa-trash-can"></i>
-                            </a>
-                        </div>
-                        <div class="col-md-12 text-center mt-2">
-                            <span>Attendance: {{ student.attendance_percentage }}%</span>
-                        </div>
-                    </div>
+                            </div> 
+
+                        {% endfor %}
+                    {% endif %}
                 </div>
-                {% endfor %}
-                {% endif %}
             </div>
-            <div class="col-3">
-                <form class="mt-4" method="POST" 
-                action="/{{ ('update-student/'~ student._id) if student else 'add-student' }}/"
-                >
-                    <div class="mb-3">
-                        Add New Student
-                        <hr />
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="name" id="name" class="form-control"
-                        value="{{ student.name if student else '' }}" placeholder="Name" required>
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="registerNumber" id="registerNumber" class="form-control"
-                         value="{{ student.regNo if student else '' }}"   placeholder="Register Number" required>
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="class" id="class" class="form-control" 
-                        value="{{ student.class if student else '' }}" placeholder="Class" required>
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="email" id="email" class="form-control"
-                        value="{{ student.email if student else '' }}" placeholder="Email" required>
-                    </div>
-                    <div class="mb-3">
-                        <input type="text" name="phone" id="phone" class="form-control"
-                        value="{{ student.phone if student else '' }}" placeholder="Phone" required>
-                    </div>
-                    <div class="">
-                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
-                    </div>
-                </form>
+
+            <!-- Add / Update Student Form -->
+            <div class="col-md-4">
+                <div class="col-12 text-end mt-3 mb-5">
+                    <a href="{{ url_for('export_data') }}" class="btn btn-primary">
+                        Download CSV
+                    </a>
+                </div>  
+                <div class="card p-3 shadow-sm">
+                    <h5 class="text-center">{{ 'Update' if student else 'Add' }} Student</h5>
+                    <hr>
+                    <form method="POST" enctype="multipart/form-data"
+                        action="{{ url_for('update_student', student_id=student._id) if student else url_for('add_student') }}">
+                        <div class="mb-3">
+                            <input type="text" name="name" id="name" class="form-control"
+                                value="{{ student.name if student else '' }}" placeholder="Name" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="registerNumber" id="registerNumber" class="form-control"
+                                value="{{ student.regNo if student else '' }}" placeholder="Register Number" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="class" id="class" class="form-control"
+                                value="{{ student.class if student else '' }}" placeholder="Class" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="email" name="email" id="email" class="form-control"
+                                value="{{ student.email if student else '' }}" placeholder="Email" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="text" name="phone" id="phone" class="form-control"
+                                value="{{ student.phone if student else '' }}" placeholder="Phone" required>
+                        </div>
+                        <div class="mb-3 text-center">
+                            <label class="form-label fw-bold">Profile Picture</label>
+                            <br>
+                            {% if student and student.photo %}
+                                <img src="{{ url_for('media', filename='default.png' ~ student.photo) }}" 
+                                    class="img-thumbnail rounded-circle mb-2" 
+                                    style="width: 100px; height: 100px; object-fit: cover;" alt="Profile Picture">
+                                <br>
+                            {% endif %}
+                            <input type="file" name="photo" id="photo" class="form-control">
+                            {% if student and student.photo %}
+                                <small class="text-muted">Leave blank to keep the current picture.</small>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
+                        </div>
+                    </form>
+                </div>
             </div>
+
         </div>
-
     </div>
-
 {% endblock %}
 
 {% block scripts %}
-    <script type="text/javascript" 
-    src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <script type="text/javascript" src="{{ url_for('static', filename='js/index.js') }}"></script>
+    <script>
+        function filterStudents() {
+            let input = document.getElementById("searchBox").value.toLowerCase();
+            let studentCards = document.getElementsByClassName("student-card");
+
+            for (let i = 0; i < studentCards.length; i++) {
+                let name = studentCards[i].getAttribute("data-name");
+                let regNo = studentCards[i].getAttribute("data-regno");
+                let studentClass = studentCards[i].getAttribute("data-class");
+
+                if (name.includes(input) || regNo.includes(input) || studentClass.includes(input)) {
+                    studentCards[i].style.display = "block";
+                } else {
+                    studentCards[i].style.display = "none";
+                }
+            }
+        }
+    </script>
 {% endblock %}
