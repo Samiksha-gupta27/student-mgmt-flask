@@ -110,17 +110,51 @@ def user_register():
     return render_template('user_register.html')
 
 
-@app.route('/grade/<regNo>/', methods=['GET', 'POST'])
-def grade(regNo):
+######################################################################################
+#                     Adding Mark                                                     |
+######################################################################################
+@app.route('/search-marks/', methods=['GET', 'POST'])
+def search_marks():
     if request.method == 'POST':
-        subject = request.form.get('subject')
-        grade = request.form.get('grade')
-        db.students.update_one(
-            {'regNo': regNo},
-            {'$push': {'grades': {'subject': subject, 'grade': grade}}}
-        )
-    student = db.students.find_one({'regNo': regNo})
-    return render_template('grade.html', student=student)
+        reg_no = request.form.get('regNo')
+        student = db.students.find_one({'regNo': reg_no})
+
+        if student:
+            return redirect(url_for('marks', st_class=student['class'], regNo=student['regNo']))
+        else:
+            return render_template('search_marks.html', error="No student found.")
+
+    return render_template('search_marks.html')
+
+@app.route('/marks/<st_class>/<regNo>/', methods=['GET', 'POST'])
+def marks(st_class, regNo): 
+    student = db.students.find_one({'regNo': regNo, 'class': st_class})  
+    error = None
+    success = None
+
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        marks = request.form.get('marks', '').strip()
+
+        if not subject or not marks:  
+            error = "All fields are required."
+        elif not marks.isdigit() or not (0 <= int(marks) <= 100):  
+            error = "Marks must be between 0 and 100."
+        else:
+            existing_subjects = [mark['subject'].lower() for mark in student.get('marks', [])]
+            if subject.lower() in existing_subjects:
+                error = f"Marks for '{subject}' already exist."
+            else:
+                db.students.update_one(
+                    {'regNo': regNo, 'class': st_class},  
+                    {'$push': {'marks': {'subject': subject, 'marks': int(marks)}}}
+                )
+                student = db.students.find_one({'regNo': regNo, 'class': st_class})  
+                success = f"Marks for '{subject}' added successfully!"
+
+    return render_template('marks.html', student=student, error=error, success=success)
+
+
 
 # Attendance Page
 @app.route('/attendance/')
