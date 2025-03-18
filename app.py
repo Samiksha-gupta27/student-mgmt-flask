@@ -320,6 +320,58 @@ def marks(st_class, regNo):
 
     return render_template('marks.html', student=student, error=error, success=success)
 
+  
+## ryan (external activities)
+UPLOAD_FOLDER = "media/certificates"
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif'}
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/achievements/', methods=['GET', 'POST'])
+def achievements():
+    if request.method == 'GET':
+        return render_template('achievements.html', student=None)  # Handle GET request gracefully
+    
+    reg_no = request.form['regNo']
+    title = request.form['title']
+    description = request.form['description']
+    file = request.files['file']
+
+    if file and allowed_file(file.filename):
+        filename = file.filename
+        file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+
+        achievements = {
+            'title': title,
+            'description': description,
+            'file': filename
+        }
+
+        db.students.update_one(
+            {'regNo': reg_no},
+            {'$push': {'achievements': achievements}}
+        )
+
+        return redirect(url_for('view_student_by_reg_no', reg_no=reg_no))
+
+
+@app.route('/student/<reg_no>')
+def view_student_by_reg_no(reg_no):
+    student = db.students.find_one({'regNo': reg_no})
+    if not student:
+        return "Student not found", 404
+    return render_template('achievements.html', student=student)
+
+
+    # Convert ObjectId to string for JSON serialization
+    student['_id'] = str(student['_id'])
+    for achievements in student.get('achievements', []):
+        achievements['file'] = url_for('static', filename=os.path.join(app.config['UPLOAD_FOLDER'], achievements['file']))
+
+    return render_template('achievements.html', student=student)
 
 
 @app.route('/remark')
