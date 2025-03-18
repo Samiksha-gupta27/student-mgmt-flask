@@ -4,6 +4,7 @@ from config import DB_URL
 from bson import ObjectId
 import csv
 import io
+from datetime import datetime
 
 client = MongoClient(DB_URL)
 db = client['students']
@@ -135,16 +136,6 @@ def mark_meeting_attendance():
     })
     return jsonify({"message": "Attendance recorded successfully!"}), 200
 
-@app.route('/attendance/')
-def attendance_page():
-    student_list = list(db.students.find({}).sort("regNo", 1))
-    return render_template('attendance.html', student_list=student_list)
-
-@app.route('/students/')
-def students_page():
-    student_list = db.students.find({}).sort("regNo", 1)
-    return render_template('students.html', student_list=student_list)
-
 
 # Update Student
 @app.route('/update-student/<id>/', methods=['GET', 'POST'])
@@ -171,11 +162,6 @@ def edit_student(id):
         db.students.update_one({'_id': ObjectId(id)}, {'$set': request.form})
         return redirect(url_for('index'))
 
-# Students Page (Restored)
-@app.route('/students/', methods=['GET', 'POST'])
-def students_page():
-    student_list = list(db.students.find({}).sort("regNo", 1))
-    return render_template('students.html', student_list=student_list)
 
 # Timetable Page
 @app.route('/timetable')
@@ -290,29 +276,28 @@ def user_register():
         return redirect(url_for('user_login'))
     return render_template('user_register.html')
 
-@app.route('/attendance/')
-def attendance_page():
-    student_list = list(db.students.find({}).sort("regNo", 1))
-    return render_template('attendance.html', student_list=student_list)
-
 
 @app.route('/attendance/', methods=['POST'])
 def mark_attendance():
-    data = request.json
-    for record in data:
-        student_id = record.get('student_id')
-        subject = record.get('subject')
-        status = record.get('status')
-        student = db.students.find_one({"_id": ObjectId(student_id)})
-        if student:
-            attendance = student.get('attendance', {})
-            subject_data = attendance.get(subject, {'total': 0, 'attended': 0})
-            subject_data['total'] += 1
-            if status == "Present":
-                subject_data['attended'] += 1
-            attendance[subject] = subject_data
-            db.students.update_one({"_id": ObjectId(student_id)}, {"$set": {"attendance": attendance}})
-    return jsonify({"message": "Attendance recorded successfully!"}), 200
+    if request.method == 'GET':    
+        student_list = list(db.students.find({}).sort("regNo", 1))
+        return render_template('attendance.html', student_list=student_list)
+    elif request.method == 'POST':
+        data = request.json
+        for record in data:
+            student_id = record.get('student_id')
+            subject = record.get('subject')
+            status = record.get('status')
+            student = db.students.find_one({"_id": ObjectId(student_id)})
+            if student:
+                attendance = student.get('attendance', {})
+                subject_data = attendance.get(subject, {'total': 0, 'attended': 0})
+                subject_data['total'] += 1
+                if status == "Present":
+                    subject_data['attended'] += 1
+                attendance[subject] = subject_data
+                db.students.update_one({"_id": ObjectId(student_id)}, {"$set": {"attendance": attendance}})
+        return jsonify({"message": "Attendance recorded successfully!"}), 200
 
 @app.route('/students/', methods=['GET', 'POST'])
 def students_page():
@@ -344,10 +329,6 @@ def view_complaints():
     complaints = list(db.complaints.find().sort("timestamp", -1))  # Fetch complaints from MongoDB
     return render_template('view_complaints.html', complaints=complaints)
 
-
-######################################################################################
-#                     Adding Mark                                                     |
-######################################################################################
 
 @app.route('/search-marks/', methods=['GET', 'POST'])
 def search_marks():
@@ -443,17 +424,9 @@ def view_student_by_reg_no(reg_no):
     return render_template('achievements.html', student=student)
 
 
-    # Convert ObjectId to string for JSON serialization
-    student['_id'] = str(student['_id'])
-    for achievements in student.get('achievements', []):
-        achievements['file'] = url_for('static', filename=os.path.join(app.config['UPLOAD_FOLDER'], achievements['file']))
-
-    return render_template('achievements.html', student=student)
-
-
 @app.route('/remark')
 def remark():
-    student_list = list(students_collection.find())
+    student_list = list(db.students.find())
 
     for student in student_list:
         student["_id"] = str(student["_id"])  # Convert ObjectId to string for rendering
@@ -478,7 +451,7 @@ def add_remark():
         return jsonify({"error": "All fields are required!"}), 400
 
     # Find the student by regNo
-    student = students_collection.find_one({"regNo": regNo})
+    student = db.students.find_one({"regNo": regNo})
     if not student:
         return jsonify({"error": "Student not found!"}), 404
 
@@ -491,7 +464,7 @@ def add_remark():
     }
 
     # Add the remark to the student's remark list
-    students_collection.update_one(
+    db.students.update_one(
         {"_id": student["_id"]},
         {"$push": {"remark": new_remark}}
     )
