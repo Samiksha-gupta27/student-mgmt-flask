@@ -20,6 +20,21 @@
                 <input type="text" id="searchBox" class="form-control mb-3"
                     placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
             </div>
+            <div class="col-12 text-end mt-3">
+                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
+                    Download CSV
+                </a>
+                <a href="{{ url_for('timetable_page') }}" class="btn btn-secondary">
+                    Manage Timetable
+                </a>
+            </div>            
+            <div class="col-9">
+                {% if student_list %}
+                {% for student in student_list %}
+                <div class="card mb-3">
+                    <div class="row g-0">
+                        <div class="col-md-2">
+                            <img src="https://via.placeholder.com/100" class="img-fluid rounded-start" alt="Profile">
 
             <div class="filter-container">
                 <form method="GET" action="{{ url_for('index') }}" class="d-flex align-items-center gap-2">
@@ -93,6 +108,16 @@
                 {% endfor %}
                 {% endif %}
             </div>
+
+            <!-- Right Panel: Add Student Form -->
+            <div class="col-3">
+                <form class="mt-4" method="POST" 
+                    action="/{{ ('update-student/' ~ student._id) if student else 'add-student' }}/"
+                >
+                    <div class="mb-3">
+                        <h5>Add New Student</h5>
+                        <hr />
+                    </div>
         </div>
 
         <!-- Add / Update Student Form -->
@@ -127,6 +152,14 @@
                         <input type="text" name="phone" id="phone" class="form-control"
                             value="{{ student.phone if student else '' }}" placeholder="Phone" required>
                     </div>
+                    <div class="mb-3">
+                        <input type="number" name="attendance" id="attendance" class="form-control"
+                        value="{{ student.attendance_percentage if student else '' }}" placeholder="Attendance %" required>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary">
+                            {{ 'Update' if student else 'Add' }} Student
+                        </button>
                     <div class="mb-3 text-center">
                         <label class="form-label fw-bold">Profile Picture</label>
                         <br>
