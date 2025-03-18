@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2 class="mb-4">Student Attendance</h2>
+
+    <div class="header mb-3 d-flex justify-content-between">
+        <div>
+            <button class="btn btn-light" onclick="markAll('present')">Mark all - Present</button>
+            <button class="btn btn-light" onclick="markAll('reset')">Reset</button>
+            <button class="btn btn-light" onclick="markAll('absent')">Mark all - Absent</button>
+        </div>
+        <div>
+            <select id="subjectDropdown" class="btn btn-light">
+                <option value="" disabled selected>Subject</option>
+                <option value="Full Stack">Full Stack</option>
+                <option value="Hypothesis">Hypothesis</option>
+                <option value="NoSQL">NoSQL</option>
+                <option value="Machine Learning">Machine Learning</option>
+            </select>
+            <select id="periodDropdown" class="btn btn-light">
+                <option value="" disabled selected>Period</option>
+                <option value="1">Period 1</option>
+                <option value="2">Period 2</option>
+                <option value="3">Period 3</option>
+                <option value="4">Period 4</option>
+            </select>
+        </div>
+    </div>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Sr. No.</th>
+                <th>Student Name</th>
+                <th>Register Number</th>
+                <th>Present</th>
+            </tr>
+        </thead>
+        <tbody id="student-list">
+            {% for student in student_list %}
+            <tr>
+                <td>{{ loop.index }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.regNo }}</td>
+                <td><input type="checkbox" class="attendance" data-student-id="{{ student._id }}"></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <button class="btn btn-primary mt-3" onclick="submitAttendance()">Submit Attendance</button>
+</div>
+
+<script>
+    function markAll(status) {
+        document.querySelectorAll('.attendance').forEach(checkbox => {
+            checkbox.checked = (status === 'absent');
+        });
+    }
+
+    function submitAttendance() {
+        let attendanceData = [];
+        let date = new Date().toISOString().split('T')[0];
+        let subject = document.getElementById('subjectDropdown').value;
+        let period = document.getElementById('periodDropdown').value;
+
+        if (!subject || !period) {
+            alert("Please select a subject and period before submitting.");
+            return;
+        }
+
+        document.querySelectorAll('.attendance').forEach(checkbox => {
+            let studentId = checkbox.getAttribute('data-student-id');
+            let status = checkbox.checked ? 'Absent' : 'Present';
+
+            attendanceData.push({ student_id: studentId, date: date, subject: subject, period: period, status: status });
+        });
+
+        fetch('/attendance/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(attendanceData)
+        })
+        .then(response => response.json())
+        .then(data => alert(data.message))
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+
+{% endblock %}
