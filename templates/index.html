@@ -57,7 +57,7 @@
                     <div class="row g-0 align-items-center">
                         <!-- Profile Picture -->
                         <div class="col-md-2 text-center p-2">
-                            <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else url_for('media', filename='default.png') }}"
+                            <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else '' }}"
                                 class="img-fluid rounded-circle" alt="Profile Picture"
                                 style="width: 80px; height: 80px; object-fit: cover;">
                         </div>
@@ -106,7 +106,7 @@
                 <h5 class="text-center">{{ 'Update' if student else 'Add' }} Student</h5>
                 <hr>
                 <form method="POST" enctype="multipart/form-data"
-                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('add_student') }}">
+                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('addStudent') }}">
                     <div class="mb-3">
                         <input type="text" name="name" id="name" class="form-control"
                             value="{{ student.name if student else '' }}" placeholder="Name" required>
@@ -143,8 +143,7 @@
                     </div>
 
                     <div class="d-grid">
-                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }}
-                            Student</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
                     </div>
                 </form>
             </div>
