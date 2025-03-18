@@ -9,6 +9,7 @@ import os
 
 client = MongoClient(DB_URL)  # Create database connection
 db = client['students']  # Create database object
+students_collection = db["students"]
 
 app = Flask(__name__)
 MEDIA_FOLDER = 'media/ProfilePicture'
@@ -218,6 +219,74 @@ def marks(st_class, regNo):
 
     return render_template('marks.html', student=student, error=error, success=success)
 
+
+@app.route('/remark')
+def remark():
+    student_list = list(students_collection.find())
+
+    for student in student_list:
+        student["_id"] = str(student["_id"])  # Convert ObjectId to string for rendering
+        if "remark" in student:
+            for remark in student["remark"]:
+                remark["date"] = remark["date"].strftime('%Y-%m-%d')  # Format date
+
+    return render_template('remark.html', student_list=student_list)
+
+@app.route('/add-Remark', methods=['POST'])
+def add_remark():
+    data = request.json  # Get data from frontend
+
+    regNo = data.get("regNo")
+    title = data.get("title")
+    description = data.get("description")
+    date = data.get("date")
+    category = data.get("category")
+
+    # Validate required fields
+    if not all([regNo, title, description, date, category]):
+        return jsonify({"error": "All fields are required!"}), 400
+
+    # Find the student by regNo
+    student = students_collection.find_one({"regNo": regNo})
+    if not student:
+        return jsonify({"error": "Student not found!"}), 404
+
+    # Create remark entry
+    new_remark = {
+        "title": title,
+        "description": description,
+        "date": datetime.strptime(date, "%Y-%m-%d"),  # Convert string to date
+        "category": category
+    }
+
+    # Add the remark to the student's remark list
+    students_collection.update_one(
+        {"_id": student["_id"]},
+        {"$push": {"remark": new_remark}}
+    )
+
+    return jsonify({"message": "Remark added successfully!"}), 200
+
+@app.route('/delete-remark', methods=['DELETE'])
+def delete_remark():
+    data = request.json  # Get JSON data from frontend
+
+    regNo = data.get("regNo")  # Get the student's register number
+    title = data.get("title")  # Get the remark title
+
+    # Find the student
+    student = students_collection.find_one({"regNo": regNo})
+
+    if not student:
+        return jsonify({"error": "Student not found!"}), 404
+
+    # Remove the specific remark
+    students_collection.update_one(
+        {"_id": student["_id"]},
+        {"$pull": {"remark": {"title": title}}}  # Remove remark with matching title
+    )
+
+    return jsonify({"message": "Remark deleted successfully!"}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
