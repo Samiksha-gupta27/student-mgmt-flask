@@ -73,5 +73,22 @@ def user_login():
 def user_register():
     return render_template('user_register.html')
 
+
+@app.route('/grade/<regNo>/', methods=['GET', 'POST'])
+def grade(regNo):
+    if request.method == 'POST':
+        subject = request.form.get('subject')
+        grade = request.form.get('grade')
+        db.students.update_one(
+            {'regNo': regNo},
+            {'$push': {'grades': {'subject': subject, 'grade': grade}}}
+        )
+    student = db.students.find_one({'regNo': regNo})
+    return render_template('grade.html', student=student)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
+
 if __name__ == '__main__':
     app.run(debug=True)

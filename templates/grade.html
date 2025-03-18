@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Grades{% endblock %}
+
+{% block content %}
+  <h1>Grades for {{ student.name }}</h1>
+
+  {% if student.grades %}
+    <div>
+      {% for grade in student.grades %}
+        <div>{{ grade.subject }}: {{ grade.grade }}</div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>No grades</p>
+  {% endif %}
+
+  <h2>Add a Grade</h2>
+  <div>
+  <form method="POST" action="{{ url_for('grade', regNo=student.regNo) }}">
+    <div>
+      <label>Subject: <input type="text" name="subject" required></label>
+    </div>
+    <div>
+      <label>Grade: <input type="text" name="grade" required></label>
+    </div>
+    <div>
+      <input type="submit" value="Add Grade">
+    </div>
+  </form>
+  </div>
+
+  <div>
+    <a href="{{ url_for('index') }}">Back to Students</a>
+</div>
+{% endblock %}
