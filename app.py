@@ -113,7 +113,7 @@ def deleteStudent(id):
 def update_student(student_id):
     if request.method == 'GET':
         student = db.students.find_one({"_id": ObjectId(student_id)})
-        students = db.students.find_one({})
+        students = db.students.find({})
         return render_template('index.html', student_list=students, student=student)
     elif request.method == 'POST':
         student = db.students.find_one({"_id": ObjectId(student_id)})
