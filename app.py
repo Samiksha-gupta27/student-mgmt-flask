@@ -1,52 +1,34 @@
-from flask import Flask, render_template, request, url_for, redirect, jsonify, Response, send_from_directory
+from flask import Flask, render_template, request, url_for, redirect, jsonify, Response
 from pymongo import MongoClient
-from config import DB_URL  # Import DB_URL from config.py
+from config import DB_URL
 from bson import ObjectId
-from datetime import datetime
 import csv
 import io
-import os
 
-client = MongoClient(DB_URL)  # Create database connection
-db = client['students']  # Create database object
-students_collection = db["students"]
+client = MongoClient(DB_URL)
+db = client['students']
 
 app = Flask(__name__)
-MEDIA_FOLDER = 'media/ProfilePicture'
-app.config['MEDIA_FOLDER'] = 'media/ProfilePicture'
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-if not os.path.exists(app.config['MEDIA_FOLDER']):
-    os.makedirs(app.config['MEDIA_FOLDER'])
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-@app.route('/media/<path:filename>')
-def media(filename):
-    return send_from_directory(app.config['MEDIA_FOLDER'], filename)
 
 @app.route('/')
 def index():
     student_list = db.students.find({}).sort("regNo", 1)
     students = []
+
     for student in student_list:
-        attendance = student.get('attendance', {})
+        attendance = student.get('attendance', {})  
         if not isinstance(attendance, dict):
-            attendance = {}
-        total_present = sum(subject.get('attended', 0)
-                            for subject in attendance.values() if isinstance(subject, dict))
-        total_completed = sum(subject.get(
-            'total', 0) for subject in attendance.values() if isinstance(subject, dict))
-        percentage = (total_present / total_completed) * \
-            100 if total_completed > 0 else 0
+            attendance = {}  
+        total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
+        total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
+        percentage = (total_present / total_completed) * 100 if total_completed > 0 else 0
         student['attendance_percentage'] = round(percentage, 2)
         students.append(student)
+
     return render_template('index.html', student_list=students)
 
+
 # Complaint Portal
-
-
 @app.route('/complaint-portal/', methods=['GET', 'POST'])
 def complaint_portal():
     if request.method == 'POST':
@@ -54,7 +36,7 @@ def complaint_portal():
         email = request.form['email']
         category = request.form['category']
         message = request.form['message']
-
+        
         db.complaints.insert_one({
             'name': name,
             'email': email,
@@ -62,15 +44,14 @@ def complaint_portal():
             'message': message,
             'timestamp': datetime.now()
         })
-
+        
         return redirect(url_for('complaint_portal'))
 
     complaints = list(db.complaints.find().sort("timestamp", -1))
     return render_template('complaint_portal.html', complaints=complaints)
 
-
 @app.route('/add-student/', methods=['POST'])
-def addStudent():
+def add_student():
     data = request.form
     db.students.insert_one({
         'name': data['name'],
@@ -84,25 +65,146 @@ def addStudent():
 
 
 @app.route('/delete-student/<id>/')
-def deleteStudent(id):
+def delete_student(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
-
+# Update Student
 @app.route('/update-student/<id>/', methods=['GET', 'POST'])
-def editStudent(id):
+def edit_student(id):
     if request.method == 'GET':
         student = db.students.find_one({'_id': ObjectId(id)})
         return render_template('index.html', student=student)
     else:
+        name = request.form['name']
+        regNo = request.form['registerNumber']
+        st_class = request.form['class']
+        email = request.form['email']
+        phone = request.form['phone']
+
+        db.students.update_one({'_id': ObjectId(id)}, {
+            '$set': {
+                'name': name,
+                'regNo': regNo,
+                'class': st_class,
+                'email': email,
+                'phone': phone
+            }
+        })
         db.students.update_one({'_id': ObjectId(id)}, {'$set': request.form})
         return redirect(url_for('index'))
 
+# Students Page (Restored)
+@app.route('/students/', methods=['GET', 'POST'])
+def students_page():
+    student_list = list(db.students.find({}).sort("regNo", 1))
+    return render_template('students.html', student_list=student_list)
 
-@app.route('/login/', methods=['GET', 'POST'])
-def user_login():
-    return render_template('user_login.html')
+# Timetable Page
+@app.route('/timetable')
+def timetable_page():
+    return render_template('timetable.html')
 
+# Add Course
+@app.route('/add-course', methods=['POST'])
+def add_course():
+    data = request.json
+    course_name = data.get('course_name')
+
+    if not course_name:
+        return jsonify({"error": "Course name is required"}), 400
+
+    if db.courses.find_one({"name": course_name}):
+        return jsonify({"error": "Course already exists!"}), 400
+
+    db.courses.insert_one({"name": course_name})
+    return jsonify({"message": "Course added successfully!"}), 200
+
+# Fetch Courses
+@app.route('/get-courses')
+def get_courses():
+    courses = list(db.courses.find({}, {"name": 1, "_id": 0}))
+    return jsonify(courses)
+
+# Add Subject with Duplicate Slot Prevention
+@app.route('/add-subject', methods=['POST'])
+def add_subject():
+    data = request.json
+    course_name = data.get('course_name')
+    subject_name = data.get('subject_name')
+    lecture_slot = data.get('lecture_slot')
+    day = data.get('day')
+
+    if not course_name or not subject_name or not lecture_slot or not day:
+        return jsonify({"error": "All fields are required"}), 400
+
+    existing_entry = db.timetable.find_one({"day": day, "lecture_slot": lecture_slot, "course": course_name})
+    if existing_entry:
+        return jsonify({"error": "A subject is already assigned to this slot for the selected course!"}), 400
+
+    db.timetable.insert_one({
+        "day": day,
+        "course": course_name,
+        "subject": subject_name,
+        "lecture_slot": lecture_slot
+    })
+    return jsonify({"message": "Subject added successfully!"}), 200
+
+# Fetch Weekly Timetable for Selected Course
+@app.route('/get-weekly-timetable/<course_name>')
+def get_weekly_timetable(course_name):
+    days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+    slots = ["9:00-9:50", "10:00-10:50", "11:00-11:50", "12:00-12:50", "2:00-2:50", "3:00-3:50", "4:00-4:50"]
+
+    weekly_timetable = []
+    for day in days:
+        row = {"day": day}
+        for slot in slots:
+            entry = db.timetable.find_one({"day": day, "lecture_slot": slot, "course": course_name}, {"_id": 0, "subject": 1})
+            row[slot] = entry["subject"] if entry else ""
+        weekly_timetable.append(row)
+
+    return jsonify(weekly_timetable)
+
+# Edit Timetable Entry
+@app.route('/edit-subject', methods=['POST'])
+def edit_subject():
+    data = request.json
+    day = data.get('day')
+    lecture_slot = data.get('lecture_slot')
+    new_subject = data.get('subject_name')
+    course_name = data.get('course_name')
+
+    if not day or not lecture_slot or not new_subject or not course_name:
+        return jsonify({"error": "All fields are required"}), 400
+
+    db.timetable.update_one(
+        {"day": day, "lecture_slot": lecture_slot, "course": course_name},
+        {"$set": {"subject": new_subject}}
+    )
+    return jsonify({"message": "Subject updated successfully!"}), 200
+
+# Download Timetable as CSV for Selected Course
+@app.route('/download-timetable/<course_name>')
+def download_timetable(course_name):
+    timetable = db.timetable.find({"course": course_name})
+    output = io.StringIO()
+    writer = csv.writer(output)
+
+    # CSV Header
+    writer.writerow(['Day', 'Course', 'Subject', 'Lecture Slot'])
+
+
+    for entry in timetable:
+        writer.writerow([
+            entry.get('day', 'Unknown'), 
+            entry.get('course', 'Unknown'), 
+            entry.get('subject', 'Unknown'), 
+            entry.get('lecture_slot', 'Unknown')
+        ])
+
+    output.seek(0)
+    return Response(output, mimetype='text/csv', headers={"Content-Disposition": f"attachment; filename={course_name}_timetable.csv"})
 
 @app.route('/register/', methods=['GET', 'POST'])
 def user_register():
@@ -110,7 +212,6 @@ def user_register():
         db.users.insert_one(request.form)
         return redirect(url_for('user_login'))
     return render_template('user_register.html')
-
 
 @app.route('/attendance/')
 def attendance_page():
@@ -133,10 +234,8 @@ def mark_attendance():
             if status == "Present":
                 subject_data['attended'] += 1
             attendance[subject] = subject_data
-            db.students.update_one({"_id": ObjectId(student_id)}, {
-                                   "$set": {"attendance": attendance}})
+            db.students.update_one({"_id": ObjectId(student_id)}, {"$set": {"attendance": attendance}})
     return jsonify({"message": "Attendance recorded successfully!"}), 200
-
 
 @app.route('/students/', methods=['GET', 'POST'])
 def students_page():
@@ -146,24 +245,26 @@ def students_page():
         student = db.students.find_one({"regNo": reg_no})
     return render_template('students.html', student=student)
 
-
 @app.route('/export/')
 def export_data():
     students = db.students.find({})
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(['Name', 'Register Number', 'Class', 'Email', 'Phone'])
+    writer.writerow(['Name', 'Register Number', 'Class', 'Email', 'Phone', 'Attendance %'])
+
     for student in students:
-        writer.writerow([student['name'], student['regNo'],
-                        student['class'], student['email'], student['phone']])
+        attendance = student.get('attendance', {})
+        total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
+        total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
+        percentage = (total_present / total_completed) * 100 if total_completed > 0 else 0
+        writer.writerow([student['name'], student['regNo'], student['class'], student['email'], student['phone'], round(percentage, 2)])
+
     output.seek(0)
     return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
 
-
 @app.route('/view_complaints')
 def view_complaints():
-    # Fetch complaints from MongoDB
-    complaints = list(db.complaints.find().sort("timestamp", -1))
+    complaints = list(db.complaints.find().sort("timestamp", -1))  # Fetch complaints from MongoDB
     return render_template('view_complaints.html', complaints=complaints)
 
 
@@ -218,6 +319,7 @@ def marks(st_class, regNo):
                 success = f"Marks for '{subject}' added successfully!"
 
     return render_template('marks.html', student=student, error=error, success=success)
+
 
 
 @app.route('/remark')
@@ -287,6 +389,44 @@ def delete_remark():
     )
 
     return jsonify({"message": "Remark deleted successfully!"}), 200
+
+ 
+@app.route('/leave/', methods=['GET', 'POST'])
+def leave_page():
+    db = client['students']  # Get database connection
+
+    if request.method == 'GET':
+        students = list(db.students.find({}, {"_id": 1, "name": 1, "regNo": 1}))  # Fetch student list
+        return render_template('leave.html', students=students)  
+
+    if request.headers.get('Content-Type') != 'application/json':
+        return jsonify({"error": "Unsupported Media Type. Expected application/json."}), 415
+
+    data = request.get_json()
+    if not isinstance(data, list):
+        return jsonify({"error": "Invalid data format"}), 400
+
+    for record in data:
+        student_id = record.get('student_id')
+        date = datetime.strptime(record.get('date'), "%Y-%m-%d")
+        reason = record.get('reason')
+        status = "Pending"  # Default status
+
+        student = db.students.find_one({"_id": ObjectId(student_id)})
+
+        if student:
+            leave_request = {
+                "student_id": ObjectId(student_id),
+                "date": date,
+                "reason": reason,
+                "status": status,
+                "applied_on": datetime.utcnow()
+            }
+
+            db.leaves.insert_one(leave_request)
+
+    return jsonify({"message": "Leave application submitted successfully!"}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True)
