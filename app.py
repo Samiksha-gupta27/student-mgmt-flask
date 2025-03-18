@@ -347,6 +347,34 @@ def export_data():
     
     return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
 
+# Hostel Leave Request Page
+@app.route('/hostel_leave/', methods=['GET', 'POST'])
+def hostel_leave_page():
+    if request.method == 'POST':
+        data = request.form
+        leave_request = {
+            'student_name': data['student_name'],
+            'reg_no': data['reg_no'],
+            'reason': data['reason'],
+            'from_date': data['from_date'],
+            'to_date': data['to_date'],
+            'status': 'Pending'
+        }
+        db.hostel_leave.insert_one(leave_request)
+        return redirect(url_for('hostel_leave_page'))
+
+    leave_requests = list(db.hostel_leave.find())
+    return render_template('hostel_leave.html', leave_requests=leave_requests)
+
+# Approve or Reject Leave Request
+@app.route('/update-leave/<id>/<action>/', methods=['POST'])
+def update_leave_status(id, action):
+    if action in ['approve', 'reject']:
+        status = 'Approved' if action == 'approve' else 'Rejected'
+        db.hostel_leave.update_one({'_id': ObjectId(id)}, {'$set': {'status': status}})
+    return redirect(url_for('hostel_leave_page'))
+
+
 if __name__ == '__main__':
     app.run(debug=True)
 
