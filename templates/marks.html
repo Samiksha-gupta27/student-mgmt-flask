@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Student Marks{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Marks for {{ student.name }} (Class: {{ student.class }})</h2>
+
+    {% if error %}
+        <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+
+    {% if success %}
+        <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    {% if student.marks %}
+        <ul class="list-group mb-4">
+            {% for mark in student.marks %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <strong>{{ mark.subject }}:</strong>
+                    <span class="badge bg-primary rounded-pill">{{ mark.marks }}</span>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <div class="alert alert-warning">No marks recorded</div>
+    {% endif %}
+
+    <h3>Add Marks</h3>
+    <form method="POST">
+        <select name="subject" class="form-control mb-3" required>
+            <option value="">Select Subject</option>
+            <option value="Full Stack">Full Stack</option>
+            <option value="Hypothesis">Hypothesis</option>
+            <option value="NoSQL">NoSQL</option>
+            <option value="Machine Learning">Machine Learning</option>
+        </select>
+
+        <input type="number" name="marks" class="form-control mb-3" placeholder="Enter Marks (0-100)" required>
+
+        <button type="submit" class="btn btn-success">Add Marks</button>
+    </form>
+
+    <a href="{{ url_for('search_marks') }}" class="btn btn-secondary mt-3">Back to Search</a>
+</div>
+{% endblock %}
