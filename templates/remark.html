@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+
+{% block title %} remark {% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4 text-primary">Student remark</h2>
+
+    <div class="mb-3 text-center">
+        <input type="text" id="searchInput" class="form-control w-50 mx-auto" placeholder="Search by Name, Reg No, or Remark">
+    </div>    
+
+    <!-- Add Remark Button -->
+    <div class="text-center">
+        <button class="btn btn-outline-primary mb-4 px-4 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#addRemarkModal">
+            + Add Remark
+        </button>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover shadow-sm text-center">
+            <thead class="bg-primary text-white">
+                <tr>
+                    <th>Student Name</th>
+                    <th>Registration Number</th>
+                    <th>Remark</th>
+                    <th>Category</th>
+                    <th>Date</th>
+                    <th>Detailed Description</th>
+                    <th>Actions</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in student_list %}
+                    {% if student.remark %}
+                        {% for Remark in student.remark %}
+                        <tr>
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.regNo }}</td>
+                            <td>{{ Remark.title }}</td>
+                            <td>{{ Remark.category }}</td>
+                            <td>{{ Remark.date }}</td>
+                            <td>{{ Remark.description }}</td>
+                            <td>
+                                <button class="btn btn-danger btn-sm" onclick="deleteRemark('{{ student.regNo }}', '{{ Remark.title }}')">
+                                    Delete
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr class="text-muted">
+                            <td>{{ student.name }}</td>
+                            <td>{{ student.regNo }}</td>
+                            <td colspan="5">No remark yet</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Remark Modal -->
+<div class="modal fade" id="addRemarkModal" tabindex="-1" aria-labelledby="addRemarkModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addRemarkModalLabel">Add Remark</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addRemarkForm">
+                    <div class="mb-3">
+                        <label for="regNo" class="form-label">Register Number</label>
+                        <select class="form-select" id="regNo" required>
+                            <option value="" disabled selected>Select Register Number</option>
+                            {% for student in student_list %}
+                                <option value="{{ student.regNo }}">{{ student.regNo }} - {{ student.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Remark</label>
+                        <input type="text" class="form-control" id="title" placeholder="Enter Remark" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Category</label>
+                        <select class="form-select" id="category" required onchange="handleCategoryChange()">
+                            <option value="" disabled selected>Select Category</option>
+                            <option value="Academics">Academics</option>
+                            <option value="Sports">Sports</option>
+                            <option value="Cultural">Cultural</option>
+                            <option value="Others">Others</option>
+                        </select>
+                    </div>
+
+                    <!-- Hidden input for "Others" -->
+                    <div class="mb-3" id="otherCategoryContainer" style="display: none;">
+                        <label for="otherCategory" class="form-label">Specify Category</label>
+                        <input type="text" class="form-control" id="otherCategory" placeholder="Enter category">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date</label>
+                        <input type="date" class="form-control" id="date" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" rows="3" placeholder="Enter Description" required></textarea>
+                    </div>
+                    <div class="text-center">
+                        <button type="button" class="btn btn-success px-4 py-2 shadow-sm" onclick="addRemark()">Submit</button>
+                        <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notification -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="toastMessage" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="d-flex">
+            <div class="toast-body"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showToast(message, isSuccess = true) {
+    const toastEl = document.getElementById("toastMessage");
+    const toastBody = toastEl.querySelector(".toast-body");
+    toastBody.textContent = message;
+    
+    if (isSuccess) {
+        toastEl.classList.add("bg-success");
+        toastEl.classList.remove("bg-danger");
+    } else {
+        toastEl.classList.add("bg-danger");
+        toastEl.classList.remove("bg-success");
+    }
+    
+    let toast = new bootstrap.Toast(toastEl);
+    toast.show();
+}
+
+function handleCategoryChange() {
+    let categorySelect = document.getElementById("category");
+    let otherCategoryContainer = document.getElementById("otherCategoryContainer");
+    let otherCategoryInput = document.getElementById("otherCategory");
+
+    if (categorySelect.value === "Others") {
+        otherCategoryContainer.style.display = "block";
+        otherCategoryInput.required = true;
+    } else {
+        otherCategoryContainer.style.display = "none";
+        otherCategoryInput.required = false;
+        otherCategoryInput.value = "";  // Reset value if not "Others"
+    }
+}
+
+function deleteRemark(regNo, title) {
+    console.log("Deleting remark:", regNo, title);
+    
+    if (!confirm("Are you sure you want to delete this remark?")) {
+        return;
+    }
+    
+    fetch('/delete-remark', {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ regNo, title })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            showToast("Remark deleted successfully!");
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast("Error: " + data.error, false);
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        showToast("An error occurred while deleting the remark.", false);
+    });
+}
+
+function addRemark() {
+    let regNo = document.getElementById("regNo").value.trim();
+    let title = document.getElementById("title").value.trim();
+    let category = document.getElementById("category").value.trim();
+    let otherCategory = document.getElementById("otherCategory").value.trim();
+    let date = document.getElementById("date").value.trim();
+    let description = document.getElementById("description").value.trim();
+
+    if (category === "Others" && !otherCategory) {
+        showToast("Please enter a category for 'Others'.", false);
+        return;
+    }
+
+    if (!regNo || !title || !category || !date || !description) {
+        showToast("Please fill out all fields.", false);
+        return;
+    }
+
+    let finalCategory = (category === "Others") ? otherCategory : category;
+
+    fetch('/add-Remark', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ regNo, title, category: finalCategory, date, description })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.message) {
+            showToast("Remark added successfully!");
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast("Error: " + data.error, false);
+        }
+    })
+    .catch(error => console.error("Error:", error));
+}
+
+function debounce(func, delay) {
+    let timer;
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+function handleSearch() {
+    let searchQuery = document.getElementById("searchInput").value.trim().toLowerCase();
+    
+    let rows = document.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+        let studentName = row.cells[0]?.textContent.toLowerCase();
+        let regNo = row.cells[1]?.textContent.toLowerCase();
+        let remark = row.cells[2]?.textContent.toLowerCase();
+
+        if (studentName.includes(searchQuery) || regNo.includes(searchQuery) || remark.includes(searchQuery)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+document.getElementById("searchInput").addEventListener("input", debounce(handleSearch, 300));
+
+</script>
+
+{% endblock %}
