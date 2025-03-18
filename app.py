@@ -3,6 +3,10 @@ from pymongo import MongoClient
 from config import DB_URL  # Import DB_URL from config.py
 from bson import ObjectId
 from datetime import datetime
+from werkzeug.utils import secure_filename
+import uuid  # To generate unique file names
+import os
+from flask import send_from_directory
 import csv
 import io
 
@@ -10,18 +14,48 @@ client = MongoClient(DB_URL)  # Create database connection
 db = client['students']  # Create database object
 
 app = Flask(__name__)
+MEDIA_FOLDER = 'media/ProfilePicture'
+app.config['MEDIA_FOLDER'] = 'media/ProfilePicture'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+if not os.path.exists(app.config['MEDIA_FOLDER']):
+    os.makedirs(app.config['MEDIA_FOLDER'])
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/media/<path:filename>')
+def media(filename):
+    return send_from_directory(app.config['MEDIA_FOLDER'], filename)
 
 @app.route('/')
 def index():
-    student_list = db.students.find({}).sort("regNo", 1)
+    sort_by = request.args.get("sort_by", "name_asc")
+    class_filter = request.args.get("class_filter", "")
 
-    students=[]
+    query = {}
+    if class_filter:
+        query["class"] = class_filter
+
+    sort_options = {
+        "name_asc": ("name", 1),
+        "name_desc": ("name", -1),
+        "regNo_asc": ("regNo", 1),
+        "regNo_desc": ("regNo", -1),
+        "class_asc": ("class", 1),
+        "class_desc": ("class", -1),
+    }
+    
+    sort_field, sort_order = sort_options.get(sort_by, ("name", 1))
+
+    student_list = db.students.find(query).sort(sort_field, sort_order)
+
+    students = []
     for student in student_list:
-        attendance = student.get('attendance', {})  
+        attendance = student.get('attendance', {})
 
-        
         if not isinstance(attendance, dict):
-            attendance = {}  
+            attendance = {}
 
         total_present = sum(subject.get('attended', 0) for subject in attendance.values() if isinstance(subject, dict))
         total_completed = sum(subject.get('total', 0) for subject in attendance.values() if isinstance(subject, dict))
@@ -30,53 +64,85 @@ def index():
         student['attendance_percentage'] = round(percentage, 2)
 
         students.append(student)
-    return render_template('index.html', student_list=students)
+
+    unique_classes = db.students.distinct("class")
+
+    return render_template('index.html', student_list=students, unique_classes=unique_classes)
 
 # Add student
 @app.route('/add-student/', methods=['POST'])
-def addStudent():
-    data = request.form
+def add_student():
+    """Add a new student with profile picture upload and attendance initialization"""
+    name = request.form['name']
+    regNo = request.form['registerNumber']
+    st_class = request.form['class']
+    email = request.form['email']
+    phone = request.form['phone']
+
+    # Handle profile picture upload
+    filename = "default.png"  # Default image if no file is uploaded
+    if 'photo' in request.files and request.files['photo'].filename:
+        file = request.files['photo']
+        if file and allowed_file(file.filename):
+            # Generate a unique filename
+            ext = file.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uuid.uuid4()}.{ext}"  
+            file.save(os.path.join(app.config['MEDIA_FOLDER'], filename))
+
+    # Insert student into database
     db.students.insert_one({
-        'name': data['name'],
-        'regNo': data['registerNumber'],
-        'class': data['class'],
-        'email': data['email'],
-        'phone': data['phone'],
-        'attendance': {}
+        'name': name,
+        'regNo': regNo,
+        'class': st_class,
+        'email': email,
+        'phone': phone,
+        'photo': filename,  # Store profile picture filename
+        'attendance': {}  # Initialize empty attendance
     })
 
     return redirect(url_for('index'))
 
+
 #delete students
-@app.route('/delete-student/<id>/')
+@app.route('/delete-student/<id>/',methods=['POST'])
 def deleteStudent(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
-@app.route('/update-student/<id>/', methods=['GET', 'POST'])
-def editStudent(id):
-    if request.method == 'GET':
-        student = db.students.find_one({'_id': ObjectId(id)})
-        students = db.students.find({})
-        return render_template('index.html', student=student, student_list=students)
-    else:
-        name = request.form['name']
-        regNo = request.form['registerNumber']
-        st_class = request.form['class']
-        email = request.form['email']
-        phone = request.form['phone']
+@app.route('/update-student/<student_id>/', methods=['POST'])
+def update_student(student_id):
+    student = db.students.find_one({"_id": ObjectId(student_id)})
+    
+    if not student:
+        return "Student not found", 404
 
-        db.students.update_one({'_id': ObjectId(id)}, {
-            '$set': {
-                'name': name,
-                'regNo': regNo,
-                'class': st_class,
-                'email': email,
-                'phone': phone
-            }
-        })
+    name = request.form.get("name")
+    reg_no = request.form.get("registerNumber")
+    student_class = request.form.get("class")
+    email = request.form.get("email")
+    phone = request.form.get("phone")
 
-        return redirect(url_for('index'))
+    # Handling file upload (profile picture)
+    filename = student.get("photo")  # Keep existing photo if no new file uploaded
+    if 'photo' in request.files and request.files['photo'].filename:
+        photo = request.files['photo']
+        if allowed_file(photo.filename):
+            ext = photo.filename.rsplit('.', 1)[1].lower()
+            filename = f"{uuid.uuid4()}.{ext}"  # Unique filename
+            photo.save(os.path.join(app.config['MEDIA_FOLDER'], filename))
+
+    updated_data = {
+        "name": name,
+        "regNo": reg_no,
+        "class": student_class,
+        "email": email,
+        "phone": phone,
+        "photo": filename  # Update photo field
+    }
+
+    db.students.update_one({"_id": ObjectId(student_id)}, {"$set": updated_data})
+    
+    return redirect(url_for('index'))
 
 @app.route('/login/', methods=['GET', 'POST'])
 def user_login():
