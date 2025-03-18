@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, url_for, redirect,jsonify
+from flask import Flask, render_template, request, url_for, redirect,jsonify, Response
 from pymongo import MongoClient
 from config import DB_URL  # Import DB_URL from config.py
 from bson import ObjectId
@@ -7,6 +7,8 @@ from werkzeug.utils import secure_filename
 import uuid  # To generate unique file names
 import os
 from flask import send_from_directory
+import csv
+import io
 
 client = MongoClient(DB_URL)  # Create database connection
 db = client['students']  # Create database object
@@ -25,7 +27,6 @@ def allowed_file(filename):
 @app.route('/media/<path:filename>')
 def media(filename):
     return send_from_directory(app.config['MEDIA_FOLDER'], filename)
-
 
 @app.route('/')
 def index():
@@ -108,7 +109,6 @@ def deleteStudent(id):
     db.students.delete_one({'_id': ObjectId(id)})
     return redirect(url_for('index'))
 
-
 @app.route('/update-student/<student_id>/', methods=['POST'])
 def update_student(student_id):
     student = db.students.find_one({"_id": ObjectId(student_id)})
@@ -144,12 +144,11 @@ def update_student(student_id):
     
     return redirect(url_for('index'))
 
-
-@app.route('/login/',methods=['GET','POST'])
+@app.route('/login/', methods=['GET', 'POST'])
 def user_login():
     return render_template('user_login.html')
 
-@app.route('/register/',methods=['GET','POST'])
+@app.route('/register/', methods=['GET', 'POST'])
 def user_register():
     if request.method == 'POST':
         email = request.form['email']
@@ -163,12 +162,12 @@ def user_register():
         # TODO: adding password encryption
 
         user = {
-            email: email,
-            password: password,
-            phone: phone,
-            name_of_college: name_of_college,
-            place:place,
-            country: country
+            'email': email,
+            'password': password,
+            'phone': phone,
+            'name_of_college': name_of_college,
+            'place': place,
+            'country': country
         }
 
         db.users.insert_one(user)
@@ -282,6 +281,19 @@ def students_page():
     
     return render_template('students.html', student=student, subject_wise=subject_wise, 
                            overall_attendance=overall_attendance, attendance_records=attendance_records)
+@app.route('/export/')
+def export_data():
+    students = db.students.find({})
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(['Name', 'Register Number', 'Class', 'Email', 'Phone'])  # Header
+    
+    for student in students:
+        writer.writerow([student['name'], student['regNo'], student['class'], student['email'], student['phone']])
+    
+    output.seek(0)
+    
+    return Response(output, mimetype='text/csv', headers={"Content-Disposition": "attachment;filename=students.csv"})
 
 if __name__ == '__main__':
     app.run(debug=True)

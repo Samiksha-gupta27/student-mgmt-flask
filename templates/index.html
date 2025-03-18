@@ -82,6 +82,34 @@
                                             </button>
                                         </form>
                                     </div>
+
+            <div class="col-12 text-end mt-3">
+                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
+                    Download CSV
+                </a>
+            </div>            
+            <div class="col-9">
+                {% if student_list %}
+                {% for student in student_list %}
+                <div class="card mb-3">
+                    <div class="row g-0">
+                        <div class="col-md-2">
+                            <img src="data:image/png;base64,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"
+                                class="img-fluid rounded-start" alt="...">
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <div class="fw-bold fs-5">
+                                    {{ student.name }}
+                                </div>
+                                <div class="fst-italic">
+                                    {{student.regNo}} | {{student.class}}
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-envelope"></i> {{student.email}}
+                                </div>
+                                <div>
+                                    <i class="fa-solid fa-phone"></i> {{student.phone}}
                                 </div>
                             </div>
                         {% endfor %}
