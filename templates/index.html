@@ -14,35 +14,40 @@
                 <hr />
             </div>
 
-            <!-- Search Bar -->
             <div class="col-md-8">
-                <input type="text" id="searchBox" class="form-control mb-3" 
-                       placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
+               <!-- Search, Sort & Filter Section -->
+<div class="search-container">
+    <input type="text" id="searchBox" class="form-control mb-3" 
+           placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
+</div>
+
+<div class="filter-container">
+    <form method="GET" action="{{ url_for('index') }}" class="d-flex align-items-center gap-2">
+        <label for="sort_by">Sort By:</label>
+        <select name="sort_by" id="sort_by">
+            <option value="name_asc">Name (A-Z)</option>
+            <option value="name_desc">Name (Z-A)</option>
+            <option value="regNo_asc">Register Number (Ascending)</option>
+            <option value="regNo_desc">Register Number (Descending)</option>
+            <option value="class_asc">Class (A-Z)</option>
+            <option value="class_desc">Class (Z-A)</option>
+        </select>
+
+        <label for="class_filter">Filter by Class:</label>
+        <select name="class_filter" id="class_filter">
+            <option value="">All Classes</option>
+            {% for class_name in unique_classes %}
+            <option value="{{ class_name }}" {% if request.args.get('class_filter') == class_name %}selected{% endif %}>
+                {{ class_name }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Apply</button>
+    </form>
+</div>
+
             
-            <!-- Sorting & Filtering Form -->
-                    <form method="GET" action="{{ url_for('index') }}">
-                        <label for="sort_by">Sort By:</label>
-                        <select name="sort_by" id="sort_by">
-                            <option value="name_asc">Name (A-Z)</option>
-                            <option value="name_desc">Name (Z-A)</option>
-                            <option value="regNo_asc">Register Number (Ascending)</option>
-                            <option value="regNo_desc">Register Number (Descending)</option>
-                            <option value="class_asc">Class (A-Z)</option>
-                            <option value="class_desc">Class (Z-A)</option>
-                        </select>
-
-                        <label for="class_filter">Filter by Class:</label>
-                        <select name="class_filter" id="class_filter">
-                            <option value="">All Classes</option>
-                            {% for class_name in unique_classes %}
-                            <option value="{{ class_name }}" {% if request.args.get('class_filter') == class_name %}selected{% endif %}>
-                                {{ class_name }}
-                            </option>
-                            {% endfor %}
-                        </select>
-
-                        <button type="submit">Apply</button>
-                    </form>
                        
                 <!-- Student List -->
                 <div id="studentList">
