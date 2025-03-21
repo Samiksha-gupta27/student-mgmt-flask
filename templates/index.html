@@ -46,13 +46,12 @@
                             <div class="col-md-7">
                                 <div class="card-body">
                                     <div class="fw-bold fs-5">{{ student_i.name }}</div>
-                                    <div class="fst-italic">{{ student_i.regNo }} | {{ student_i.class
-                                        }}</div>
+                                    <div class="fst-italic">{{ student_i.regNo }} | {{ student_i.class }}</div>
                                     <div><i class="fa-solid fa-envelope"></i> {{ student_i.email }}
                                     </div>
                                     <div><i class="fa-solid fa-phone"></i> {{ student_i.phone }}</div>
-                                    <div class="mt-2"><strong>Attendance:</strong> {{
-                                        student_i.attendance_percentage }}%
+                                    <div class="mt-2"><strong>Attendance:</strong> 
+                                        {{ student_i.attendance_percentage }}%
                                     </div>
                                 </div>
                             </div>
@@ -160,8 +159,7 @@
 
                     <div class="d-grid">
 
-                        <button type="submit" class="btn btn-primary">{{ 'Update' if
-                            student else 'Add' }} Student</button>
+                        <button type="submit" class="btn btn-primary">{{ 'Update' if student else 'Add' }} Student</button>
                     </div>
                 </form>
             </div>

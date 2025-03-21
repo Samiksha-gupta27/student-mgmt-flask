@@ -82,34 +82,11 @@ def add_student():
     return redirect(url_for('index'))
 
 
-@app.route('/delete-student/<id>/')
-def delete_student(id):
-    db.students.delete_one({'_id': ObjectId(id)})
+@app.route('/delete-student/<student_id>/')
+def delete_student(student_id):
+    db.students.delete_one({'_id': ObjectId(student_id)})
     return redirect(url_for('index'))
 
-
-@app.route('/update-student/<id>/', methods=['POST'])
-def editStudent(id):
-    name = request.form['name']
-    regNo = request.form['registerNumber']
-    st_class = request.form['class']
-    email = request.form['email']
-    phone = request.form['phone']
-    club = request.form.get('club', "No Club")
-    role = request.form.get('role', "Member")
-
-    db.students.update_one({'_id': ObjectId(id)}, {
-        '$set': {
-            'name': name,
-            'regNo': regNo,
-            'class': st_class,
-            'email': email,
-            'phone': phone,
-            'club': club,
-            'role': role
-        }
-    })
-    return redirect(url_for('index'))
 
 @app.route('/clubs/')
 def clubs_page():
@@ -151,11 +128,12 @@ def mark_meeting_attendance():
 
 
 # Update Student
-@app.route('/update-student/<id>/', methods=['GET', 'POST'])
-def edit_student(id):
+@app.route('/update-student/<student_id>/', methods=['GET', 'POST'])
+def update_student(student_id):
     if request.method == 'GET':
-        student = db.students.find_one({'_id': ObjectId(id)})
-        return render_template('index.html', student=student)
+        student = db.students.find_one({'_id': ObjectId(student_id)})
+        students = db.students.find({}).sort("regNo", 1)
+        return render_template('index.html', student=student, student_list=students)
     else:
         name = request.form['name']
         regNo = request.form['registerNumber']
@@ -163,7 +141,7 @@ def edit_student(id):
         email = request.form['email']
         phone = request.form['phone']
 
-        db.students.update_one({'_id': ObjectId(id)}, {
+        db.students.update_one({'_id': ObjectId(student_id)}, {
             '$set': {
                 'name': name,
                 'regNo': regNo,
