@@ -10,7 +10,6 @@ client = MongoClient(DB_URL)
 db = client['students']
 
 app = Flask(__name__)
-
 @app.route('/')
 def index():
     student_list = db.students.find({}).sort("regNo", 1)
