@@ -7,158 +7,92 @@
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-4">
     <div class="row">
         <div class="col-12 text-center fs-4 fst-italic">
             <strong>Student List Management</strong>
             <hr />
         </div>
 
-        <div class="col-md-8">
-            <!-- Search, Sort & Filter Section -->
-            <div class="search-container">
-                <input type="text" id="searchBox" class="form-control mb-3"
-                    placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
-            </div>
-            <div class="col-12 text-end mt-3">
-                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
-                    Download CSV
-                </a>
-                <a href="{{ url_for('timetable_page') }}" class="btn btn-secondary">
-                    Manage Timetable
-                </a>
-            </div>            
-            <div class="col-9">
-                {% if student_list %}
-                {% for student in student_list %}
-                <div class="card mb-3">
+        <div class="col-9">
+            <input type="text" id="searchBox" class="form-control mb-3"
+                placeholder="Search by Name, Reg No, or Class..." onkeyup="filterStudents()">
+        </div>
+    </div>
 
-                    <div class="row g-0 align-items-center">
-                        <div class="col-md-2 d-flex justify-content-center">
-                            <img src="https://cdn-icons-png.flaticon.com/512/149/149071.png"
-                                class="img-fluid rounded-start" alt="User Image" style="max-width: 80px;">
-                        </div>
+    <!-- Student Management Section -->
+    <div class="row">
+        <div class="col-8">
 
-                    <div class="row g-0">
-                        <div class="col-md-2">
-                            <img src="https://via.placeholder.com/100" class="img-fluid rounded-start" alt="Profile">
+            <div class="row g-0 align-items-center">
 
-            <div class="filter-container">
-                <form method="GET" action="{{ url_for('index') }}" class="d-flex align-items-center gap-2">
-                    <label for="sort_by">Sort By:</label>
-                    <select name="sort_by" id="sort_by">
-                        <option value="name_asc">Name (A-Z)</option>
-                        <option value="name_desc">Name (Z-A)</option>
-                        <option value="regNo_asc">Register Number (Ascending)</option>
-                        <option value="regNo_desc">Register Number (Descending)</option>
-                        <option value="class_asc">Class (A-Z)</option>
-                        <option value="class_desc">Class (Z-A)</option>
-                    </select>
+                <!-- Student List -->
+                <div id="studentList" class="mt-3">
+                    {% if student_list %}
+                    {% for student_i in student_list %}
 
-                    <label for="class_filter">Filter by Class:</label>
-                    <select name="class_filter" id="class_filter">
-                        <option value="">All Classes</option>
-                        {% for class_name in unique_classes %}
-                        <option value="{{ class_name }}" {% if request.args.get('class_filter')==class_name %} selected {% endif %}>
-                            {{ class_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
+                    <div class="card mb-3 shadow-sm student-card" data-name="{{ student_i.name|lower }}"
+                        data-regno="{{ student_i.regNo|lower }}" data-class="{{ student_i.class|lower }}">
+                        <div class="row g-0 align-items-center">
+                            <!-- Profile Picture -->
+                            <div class="col-md-2 text-center p-2">
+                                <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else '' }}"
+                                    class="img-fluid rounded-circle" alt="Profile Picture"
+                                    style="width: 80px; height: 80px; object-fit: cover;">
+                            </div>
 
-                    <button type="submit">Apply</button>
-                </form>
-            </div>
+                            <!-- Student Details -->
 
-            <!-- Student List -->
-            <div id="studentList" class="mt-3">
-                {% if student_list %}
-                {% for student_i in student_list %}
-
-                <div class="card mb-3 shadow-sm student-card" data-name="{{ student_i.name|lower }}"
-                    data-regno="{{ student_i.regNo|lower }}" data-class="{{ student_i.class|lower }}">
-                    <div class="row g-0 align-items-center">
-                        <!-- Profile Picture -->
-                        <div class="col-md-2 text-center p-2">
-                            <img src="{{ url_for('media', filename=student_i.photo) if student_i.photo else '' }}"
-                                class="img-fluid rounded-circle" alt="Profile Picture"
-                                style="width: 80px; height: 80px; object-fit: cover;">
-                        </div>
-
-                        <!-- Student Details -->
-
-                        <div class="col-md-7">
-                            <div class="card-body">
-                                <div class="fw-bold fs-5">{{ student_i.name }}</div>
-                                <div class="fst-italic">{{ student_i.regNo }} | {{ student_i.class }}</div>
-                                <div><i class="fa-solid fa-envelope"></i> {{ student_i.email }}</div>
-                                <div><i class="fa-solid fa-phone"></i> {{ student_i.phone }}</div>
-                                <div class="mt-2"><strong>Attendance:</strong> {{ student_i.attendance_percentage }}%
+                            <div class="col-md-7">
+                                <div class="card-body">
+                                    <div class="fw-bold fs-5">{{ student_i.name }}</div>
+                                    <div class="fst-italic">{{ student_i.regNo }} | {{ student_i.class }}</div>
+                                    <div><i class="fa-solid fa-envelope"></i> {{ student_i.email }}
+                                    </div>
+                                    <div><i class="fa-solid fa-phone"></i> {{ student_i.phone }}</div>
+                                    <div class="mt-2"><strong>Attendance:</strong> 
+                                        {{ student_i.attendance_percentage }}%
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-3 d-flex flex-column align-items-center">
-                            <div class="d-flex gap-2 mb-2">
-                                <a href="/update-student/{{student._id}}/" class="btn btn-sm btn-primary">
+                            <div class="col-md-3 d-flex flex-column align-items-center">
+
+                                <a href="/update-student/{{ student_i._id }}/" class="btn btn-sm btn-primary mb-3">
                                     <i class="fa-solid fa-pen"></i>
                                 </a>
-                                <a href="/delete-student/{{student._id}}/" class="btn btn-sm btn-danger">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </a>
+                                <form action="/delete-student/{{ student_i._id }}/" method="POST"
+                                    style="display:inline;"
+                                    onsubmit="return confirm('Are you sure you want to delete this student?');">
+                                    <button type="submit" class="btn btn-sm btn-danger">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+
                             </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <i class="fa-solid fa-users"></i>
-                                <span class="fw-bold">{{ student.club }}</span>
-                            </div>
-                        </div>
-                        <div class="col-md-12 text-center mt-2">
-                            <span>Attendance: {{ student.attendance_percentage }}%</span>
-
-
-                        <!-- Edit & Delete Buttons -->
-                        <div class="col-md-3 text-center">
-                            <a href="/update-student/{{ student_i._id }}/" class="btn btn-sm btn-primary me-2">
-                                <i class="fa-solid fa-pen"></i>
-                            </a>
-                            <form action="/delete-student/{{ student_i._id }}/" method="POST" style="display:inline;"
-                                onsubmit="return confirm('Are you sure you want to delete this student?');">
-                                <button type="submit" class="btn btn-sm btn-danger">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </form>
-
                         </div>
 
                     </div>
-                </div>
 
-                {% endfor %}
-                {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                </div>
             </div>
 
-            <!-- Right Panel: Add Student Form -->
-            <div class="col-3">
-                <form class="mt-4" method="POST" 
-                    action="/{{ ('update-student/' ~ student._id) if student else 'add-student' }}/"
-                >
-                    <div class="mb-3">
-                        <h5>Add New Student</h5>
-                        <hr />
-                    </div>
+            <div class="col float-end">
+                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
+                    Download All
+                </a>
+            </div>
         </div>
 
         <!-- Add / Update Student Form -->
-        <div class="col-md-4">
-            <div class="col-12 text-end mt-3 mb-5">
-                <a href="{{ url_for('export_data') }}" class="btn btn-primary">
-                    Download CSV
-                </a>
-            </div>
-            <div class="card p-3 shadow-sm">
+        <div class="col-4">
+            <div class="card p-3 shadow-sm mt-3">
                 <h5 class="text-center">{{ 'Update' if student else 'Add' }} Student</h5>
                 <hr>
                 <form method="POST" enctype="multipart/form-data"
-                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('addStudent') }}">
+                    action="{{ url_for('update_student', student_id=student._id) if student else url_for('add_student') }}">
                     <div class="mb-3">
                         <input type="text" name="name" id="name" class="form-control"
                             value="{{ student.name if student else '' }}" placeholder="Name" required>
@@ -181,28 +115,34 @@
                     </div>
                     <div class="mb-3">
                         <input type="number" name="attendance" id="attendance" class="form-control"
-                        value="{{ student.attendance_percentage if student else '' }}" placeholder="Attendance %" required>
+                            value="{{ student.attendance_percentage if student else '' }}" placeholder="Attendance %"
+                            required>
                     </div>
 
-                  
+
                     <div class="mb-3">
                         <select name="club" id="club" class="form-control">
-                            <option value="No Club" {% if student and student.club == "No Club" %}selected{% endif %}>No Club</option>
-                            <option value="Football Club" {% if student and student.club == "Football Club" %}selected{% endif %}>Football Club</option>
-                            <option value="Drama Club" {% if student and student.club == "Drama Club" %}selected{% endif %}>Drama Club</option>
-                            <option value="Science Club" {% if student and student.club == "Science Club" %}selected{% endif %}>Science Club</option>
-                            <option value="Music Club" {% if student and student.club == "Music Club" %}selected{% endif %}>Music Club</option>
+                            <option value="No Club" {% if student and student.club=="No Club" %}selected{% endif %}>
+                                No Club
+                            </option>
+                            <option value="Football Club" {% if student and student.club=="Football Club" %}selected{%
+                                endif %}>Football
+                                Club</option>
+                            <option value="Drama Club" {% if student and student.club=="Drama Club" %}selected{% endif
+                                %}>
+                                Drama Club
+                            </option>
+                            <option value="Science Club" {% if student and student.club=="Science Club" %}selected{%
+                                endif %}>Science
+                                Club</option>
+                            <option value="Music Club" {% if student and student.club=="Music Club" %}selected{% endif
+                                %}>
+                                Music Club
+                            </option>
                         </select>
                     </div>
-                    <div class="">
-
-             
-                    <div>
-                        <button type="submit" class="btn btn-primary">
-                            {{ 'Update' if student else 'Add' }} Student
-                        </button>
-                    <div class="mb-3 text-center">
-                        <label class="form-label fw-bold">Profile Picture</label>
+                    <div class="mb-3">
+                        <label class="form-label">Profile Picture</label>
                         <br>
                         {% if student and student.photo %}
                         <img src="{{ url_for('media', filename='default.png' ~ student.photo) }}"
@@ -212,7 +152,8 @@
                         {% endif %}
                         <input type="file" name="photo" id="photo" class="form-control">
                         {% if student and student.photo %}
-                        <small class="text-muted">Leave blank to keep the current picture.</small>
+                        <small class="text-muted">Leave blank to keep the current
+                            picture.</small>
                         {% endif %}
                     </div>
 
@@ -223,7 +164,7 @@
                 </form>
             </div>
         </div>
-        
+
     </div>
 </div>
 {% endblock %}

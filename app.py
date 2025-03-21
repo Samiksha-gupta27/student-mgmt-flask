@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, url_for, redirect, jsonify, Response
+from flask import Flask, render_template, request, url_for, redirect, jsonify, Response, send_from_directory
 from pymongo import MongoClient
 from config import DB_URL
 from bson import ObjectId
 import csv
+import os
 import io
 from datetime import datetime
 
@@ -10,6 +11,19 @@ client = MongoClient(DB_URL)
 db = client['students']
 
 app = Flask(__name__)
+MEDIA_FOLDER = 'media/ProfilePicture'
+app.config['MEDIA_FOLDER'] = 'media/ProfilePicture'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+if not os.path.exists(app.config['MEDIA_FOLDER']):
+    os.makedirs(app.config['MEDIA_FOLDER'])
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/media/<path:filename>')
+def media(filename):
+    return send_from_directory(app.config['MEDIA_FOLDER'], filename)
 
 @app.route('/')
 def index():
@@ -69,34 +83,11 @@ def add_student():
     return redirect(url_for('index'))
 
 
-@app.route('/delete-student/<id>/')
-def delete_student(id):
-    db.students.delete_one({'_id': ObjectId(id)})
+@app.route('/delete-student/<student_id>/')
+def delete_student(student_id):
+    db.students.delete_one({'_id': ObjectId(student_id)})
     return redirect(url_for('index'))
 
-
-@app.route('/update-student/<id>/', methods=['POST'])
-def editStudent(id):
-    name = request.form['name']
-    regNo = request.form['registerNumber']
-    st_class = request.form['class']
-    email = request.form['email']
-    phone = request.form['phone']
-    club = request.form.get('club', "No Club")
-    role = request.form.get('role', "Member")
-
-    db.students.update_one({'_id': ObjectId(id)}, {
-        '$set': {
-            'name': name,
-            'regNo': regNo,
-            'class': st_class,
-            'email': email,
-            'phone': phone,
-            'club': club,
-            'role': role
-        }
-    })
-    return redirect(url_for('index'))
 
 @app.route('/clubs/')
 def clubs_page():
@@ -138,11 +129,12 @@ def mark_meeting_attendance():
 
 
 # Update Student
-@app.route('/update-student/<id>/', methods=['GET', 'POST'])
-def edit_student(id):
+@app.route('/update-student/<student_id>/', methods=['GET', 'POST'])
+def update_student(student_id):
     if request.method == 'GET':
-        student = db.students.find_one({'_id': ObjectId(id)})
-        return render_template('index.html', student=student)
+        student = db.students.find_one({'_id': ObjectId(student_id)})
+        students = db.students.find({}).sort("regNo", 1)
+        return render_template('index.html', student=student, student_list=students)
     else:
         name = request.form['name']
         regNo = request.form['registerNumber']
@@ -150,7 +142,7 @@ def edit_student(id):
         email = request.form['email']
         phone = request.form['phone']
 
-        db.students.update_one({'_id': ObjectId(id)}, {
+        db.students.update_one({'_id': ObjectId(student_id)}, {
             '$set': {
                 'name': name,
                 'regNo': regNo,
@@ -277,7 +269,7 @@ def user_register():
     return render_template('user_register.html')
 
 
-@app.route('/attendance/', methods=['POST'])
+@app.route('/attendance/', methods=['GET','POST'])
 def mark_attendance():
     if request.method == 'GET':    
         student_list = list(db.students.find({}).sort("regNo", 1))
