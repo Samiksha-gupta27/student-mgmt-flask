@@ -268,7 +268,7 @@ def user_register():
     return render_template('user_register.html')
 
 
-@app.route('/attendance/', methods=['POST'])
+@app.route('/attendance/', methods=['GET','POST'])
 def mark_attendance():
     if request.method == 'GET':    
         student_list = list(db.students.find({}).sort("regNo", 1))
