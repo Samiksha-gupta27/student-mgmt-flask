@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %} Hostel Leave Approval {% endblock %}
+
+{% block styles %}
+    <link type="text/css" href="{{ url_for('static', filename='css/hostel_leave.css') }}" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>Hostel Leave Approval</h2>
+        <form action="{{ url_for('hostel_leave_page') }}" method="POST">
+            <div class="mb-3">
+                <label for="student_name" class="form-label">Student Name</label>
+                <input type="text" class="form-control" name="student_name" required>
+            </div>
+            <div class="mb-3">
+                <label for="reg_no" class="form-label">Register Number</label>
+                <input type="text" class="form-control" name="reg_no" id="reg_no" required oninput="validateRegisterNumber(this)">
+                <span id="error_message" style="color: red;"></span>
+            </div>
+            <div class="mb-3">
+                <label for="reason" class="form-label">Reason</label>
+                <textarea class="form-control" name="reason" required></textarea>
+            </div>
+            <div class="mb-3">
+                <label for="from_date" class="form-label">From Date</label>
+                <input type="date" class="form-control" name="from_date" required>
+            </div>
+            <div class="mb-3">
+                <label for="to_date" class="form-label">To Date</label>
+                <input type="date" class="form-control" name="to_date" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Request</button>
+        </form>
+        
+        <h3 class="mt-5">Pending Requests</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Register No</th>
+                    <th>Reason</th>
+                    <th>From</th>
+                    <th>To</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in leave_requests %}
+                <tr>
+                    <td>{{ request.student_name }}</td>
+                    <td>{{ request.reg_no }}</td>
+                    <td>{{ request.reason }}</td>
+                    <td>{{ request.from_date }}</td>
+                    <td>{{ request.to_date }}</td>
+                    <td>{{ request.status }}</td>
+                    <td>
+                        {% if request.status == 'Pending' %}
+                            <form action="{{ url_for('update_leave_status', id=request._id, action='approve') }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Approve</button>
+                            </form>
+                            <form action="{{ url_for('update_leave_status', id=request._id, action='reject') }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+    function validateRegisterNumber(input) {
+        let errorMessage = document.getElementById("error_message");
+        if (!/^\d*$/.test(input.value)) {
+            errorMessage.textContent = "Only numbers are allowed!";
+            input.value = input.value.replace(/\D/g, ""); // Remove non-numeric characters
+        } else {
+            errorMessage.textContent = "";
+        }
+    }
+    </script>
+{% endblock %}
