@@ -1,15 +1,28 @@
-from flask import Flask, render_template, request, url_for, redirect, jsonify, Response
+from flask import Flask, render_template, request, url_for, redirect, jsonify, Response, send_from_directory
 from pymongo import MongoClient
 from config import DB_URL
 from bson import ObjectId
 import csv
-import io
+import os
 from datetime import datetime
 
 client = MongoClient(DB_URL)
 db = client['students']
 
 app = Flask(__name__)
+MEDIA_FOLDER = 'media/ProfilePicture'
+app.config['MEDIA_FOLDER'] = 'media/ProfilePicture'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+if not os.path.exists(app.config['MEDIA_FOLDER']):
+    os.makedirs(app.config['MEDIA_FOLDER'])
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/media/<path:filename>')
+def media(filename):
+    return send_from_directory(app.config['MEDIA_FOLDER'], filename)
 
 @app.route('/')
 def index():
