@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Scholarships{% endblock %}
+
+{% block content %}
+    <h2>Available Scholarships</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Provider</th>
+                <th>Deadline</th>
+                <th>Link</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="scholarship-table-body">
+            {% for sch in scholarships %}
+            <tr data-id="{{ sch.id }}">
+                <td>{{ sch.id }}</td>
+                <td contenteditable="true">{{ sch.name }}</td>
+                <td contenteditable="true">{{ sch.provider }}</td>
+                <td contenteditable="true">{{ sch.deadline }}</td>
+                <td><a href="{{ sch.link }}" target="_blank">Apply</a></td>
+                <td><a href="{{ url_for('view_applicants', scholarship_id=sch.id) }}">View Applicants</a></td>
+                <td>
+                    <button onclick="deleteScholarship('{{ sch.id }}')">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Add a Scholarship</h2>
+    <form id="scholarship-form">
+        <input type="text" id="name" placeholder="Scholarship Name" required>
+        <input type="text" id="provider" placeholder="Provider" required>
+        <input type="date" id="deadline" required>
+        <input type="url" id="link" placeholder="Application Link" required>
+        <button type="submit">Add Scholarship</button>
+    </form>
+
+
+
+    <h2>Apply for a Scholarship</h2>
+    <form action="/apply" method="post">
+        <input type="text" name="student_name" placeholder="Your Name" required>
+        <input type="email" name="email" placeholder="Your Email" required>
+        <select name="scholarship_id" required>
+            {% for sch in scholarships %}
+            <option value="{{ sch.id }}">{{ sch.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Apply</button>
+    </form>
+
+    <script>
+        document.getElementById("scholarship-form").addEventListener("submit", function (event) {
+            event.preventDefault();
+            const name = document.getElementById("name").value;
+            const provider = document.getElementById("provider").value;
+            const deadline = document.getElementById("deadline").value;
+            const link = document.getElementById("link").value;
+
+            fetch("/api/scholarships", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, provider, deadline, link })
+            }).then(response => response.json())
+              .then(() => location.reload());
+        });
+
+        function updateScholarship(id) {
+            const row = document.querySelector(`tr[data-id='${id}']`);
+            const name = row.children[1].innerText;
+            const provider = row.children[2].innerText;
+            const deadline = row.children[3].innerText;
+
+            fetch(`/api/scholarships/${id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, provider, deadline })
+            }).then(response => response.json())
+              .then(() => alert("Updated successfully!"));
+        }
+
+        function deleteScholarship(id) {
+            fetch(`/api/scholarships/${id}`, {
+                method: "DELETE"
+            }).then(response => response.json())
+              .then(() => location.reload());
+        }
+    </script>
+{% endblock %}

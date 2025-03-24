@@ -550,6 +550,78 @@ def update_leave_status(id, action):
         db.hostel_leave.update_one({'_id': ObjectId(id)}, {'$set': {'status': status}})
     return redirect(url_for('hostel_leave_page'))
 
+scholarships = [] 
+students = []  
+applications = [] 
+
+
+@app.route('/scholarships')
+def scholarships_page():
+    return render_template('scholarships.html', scholarships=scholarships)
+
+
+@app.route('/api/scholarships', methods=['GET'])
+def get_scholarships():
+    return jsonify(scholarships)
+
+
+
+@app.route('/api/scholarships', methods=['POST'])
+def add_scholarship():
+    data = request.json
+    new_scholarship = {
+        "id": len(scholarships) + 1,
+        "name": data["name"],
+        "provider": data["provider"],
+        "deadline": data["deadline"],
+        "link": data["link"]
+    }
+    scholarships.append(new_scholarship)
+    return jsonify(new_scholarship), 201
+
+
+
+@app.route('/api/scholarships/<int:scholarship_id>', methods=['DELETE'])
+def delete_scholarship(scholarship_id):
+    global scholarships
+    scholarships = [s for s in scholarships if s["id"] != scholarship_id]
+    return jsonify({"message": "Scholarship deleted"}), 200
+
+@app.route('/apply', methods=['POST'])
+def apply_scholarship():
+    student_name = request.form["student_name"]
+    email = request.form["email"]
+    scholarship_id = int(request.form["scholarship_id"])
+
+    
+    student = next((s for s in students if s["email"] == email), None)
+    if not student:
+        student = {
+            "id": len(students) + 1,
+            "name": student_name,
+            "email": email
+        }
+        students.append(student)
+
+    
+    applications.append({
+        "student_id": student["id"],
+        "scholarship_id": scholarship_id
+    })
+
+    return redirect(url_for('scholarships_page'))
+
+@app.route('/scholarships/<int:scholarship_id>/applicants')
+def view_applicants(scholarship_id):
+    applied_students = [
+        {"name": s["name"], "email": s["email"]}
+        for a in applications
+        for s in students
+        if a["student_id"] == s["id"] and a["scholarship_id"] == scholarship_id
+    ]
+    return render_template('applicants.html', scholarship_id=scholarship_id, students=applied_students)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

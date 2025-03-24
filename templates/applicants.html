@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Applicants for Scholarship{% endblock %}
+
+{% block content %}
+    <h2>Applicants for Scholarship ID: {{ scholarship_id }}</h2>
+
+    {% if students %}
+    <table >
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for student in students %}
+            <tr>
+                <td>{{ student.name }}</td>
+                <td>{{ student.email }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No students have applied for this scholarship yet.</p>
+    {% endif %}
+
+    <a href="{{ url_for('scholarships_page') }}">Back to Scholarships</a>
+{% endblock %}
