@@ -550,6 +550,8 @@ def update_leave_status(id, action):
         db.hostel_leave.update_one({'_id': ObjectId(id)}, {'$set': {'status': status}})
     return redirect(url_for('hostel_leave_page'))
 
+#scholarship
+
 scholarships = [] 
 students = []  
 applications = [] 
